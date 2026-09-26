@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserType {
+  CUSTOMER
+  STAFF
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ResellerStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum VehicleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  RESERVED
+  SOLD
+  WITHDRAWN
+}
+
+enum VehicleCondition {
+  NEW
+  USED
+}
+
+enum VehicleLocation {
+  CHINA
+  SENEGAL
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  FOLLOW_UP
+  CONVERTED
+  LOST
+}
+
+enum RequestStatus {
+  RECEIVED
+  QUALIFIED
+  SEARCHING
+  PROPOSED
+  CLOSED
+  ABANDONED
+}
+
+enum OrderStatus {
+  CREATED
+  CONFIRMED
+  PROCESSING
+  SHIPPING
+  DELIVERED
+  CANCELLED
+}
+
+enum AssetVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Profile {
+  id String @id @default(uuid()) @db.Uuid
+  authUserId String @unique @map("auth_user_id") @db.Uuid
+  userType UserType
+  status AccountStatus @default(ACTIVE)
+  customer CustomerProfile?
+  staff StaffProfile?
+  audits AuditLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("profiles")
+}
+
+model CustomerProfile {
+  id String @id @default(uuid()) @db.Uuid
+  profileId String @unique @db.Uuid
+  profile Profile @relation(fields: [profileId], references: [id])
+  firstName String
+  lastName String
+  phone String?
+  whatsapp String?
+  city String?
+  country String?
+  resellerStatus ResellerStatus @default(NONE)
+  favorites Favorite[]
+  searches SavedSearch[]
+  leads Lead[]
+  requests CustomRequest[]
+  orders Order[]
+  @@map("customer_profiles")
+}
+
+model StaffProfile {
+  id String @id @default(uuid()) @db.Uuid
+  profileId String @unique @db.Uuid
+  profile Profile @relation(fields: [profileId], references: [id])
+  roleId String @db.Uuid
+  role Role @relation(fields: [roleId], references: [id])
+  active Boolean @default(true)
+  assignedLeads Lead[]
+  @@map("staff_profiles")
+}
+
+model Role {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique
+  name String
+  staff StaffProfile[]
+  permissions RolePermission[]
+  @@map("roles")
+}
+
+model Permission {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique
+  roles RolePermission[]
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId String @db.Uuid
+  permissionId String @db.Uuid
+  role Role @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Brand {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  slug String @unique
+  active Boolean @default(true)
+  models VehicleModel[]
+  vehicles Vehicle[]
+  @@map("brands")
+}
+
+model VehicleModel {
+  id String @id @default(uuid()) @db.Uuid
+  brandId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id])
+  name String
+  slug String
+  active Boolean @default(true)
+  vehicles Vehicle[]
+  @@unique([brandId, slug])
+  @@map("vehicle_models")
+}
+
+model Vehicle {
+  id String @id @default(uuid()) @db.Uuid
+  reference String @unique
+  slug String @unique
+  brandId String @db.Uuid
+  modelId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id])
+  model VehicleModel @relation(fields: [modelId], references: [id])
+  title String
+  condition VehicleCondition
+  location VehicleLocation
+  status VehicleStatus @default(DRAFT)
+  year Int
+  mileage Int?
+  fuel String?
+  transmission String?
+  publicPrice Decimal @db.Decimal(14, 2)
+  resellerPrice Decimal? @db.Decimal(14, 2)
+  currency String @default("XOF")
+  publishedAt DateTime?
+  images VehicleImage[]
+  documents VehicleDocument[]
+  favorites Favorite[]
+  leads Lead[]
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, location, publishedAt])
+  @@index([brandId, modelId, publicPrice])
+  @@map("vehicles")
+}
+
+model VehicleImage {
+  id String @id @default(uuid()) @db.Uuid
+  vehicleId String @db.Uuid
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  path String @unique
+  sortOrder Int @default(0)
+  isPrimary Boolean @default(false)
+  visibility AssetVisibility @default(PUBLIC)
+  @@index([vehicleId, sortOrder])
+  @@map("vehicle_images")
+}
+
+model VehicleDocument {
+  id String @id @default(uuid()) @db.Uuid
+  vehicleId String @db.Uuid
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  path String @unique
+  kind String
+  visibility AssetVisibility @default(PRIVATE)
+  @@index([vehicleId])
+  @@map("vehicle_documents")
+}
+
+model Favorite {
+  id String @id @default(uuid()) @db.Uuid
+  customerId String @db.Uuid
+  vehicleId String @db.Uuid
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([customerId, vehicleId])
+  @@map("favorites")
+}
+
+model SavedSearch {
+  id String @id @default(uuid()) @db.Uuid
+  customerId String @db.Uuid
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  name String
+  filtersJson Json
+  createdAt DateTime @default(now())
+  @@index([customerId])
+  @@map("saved_searches")
+}
+
+model Lead {
+  id String @id @default(uuid()) @db.Uuid
+  customerId String? @db.Uuid
+  vehicleId String? @db.Uuid
+  assigneeId String? @db.Uuid
+  customer CustomerProfile? @relation(fields: [customerId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  assignee StaffProfile? @relation(fields: [assigneeId], references: [id])
+  contactName String
+  contactPhone String
+  status LeadStatus @default(NEW)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, assigneeId])
+  @@map("leads")
+}
+
+model CustomRequest {
+  id String @id @default(uuid()) @db.Uuid
+  customerId String? @db.Uuid
+  customer CustomerProfile? @relation(fields: [customerId], references: [id])
+  criteriaJson Json
+  budgetMin Decimal? @db.Decimal(14, 2)
+  budgetMax Decimal? @db.Decimal(14, 2)
+  status RequestStatus @default(RECEIVED)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([customerId, status])
+  @@map("custom_requests")
+}
+
+model Order {
+  id String @id @default(uuid()) @db.Uuid
+  reference String @unique
+  customerId String @db.Uuid
+  vehicleId String? @db.Uuid
+  customer CustomerProfile @relation(fields: [customerId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  agreedPrice Decimal @db.Decimal(14, 2)
+  currency String @default("XOF")
+  status OrderStatus @default(CREATED)
+  events OrderEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([customerId, status])
+  @@map("orders")
+}
+
+model OrderEvent {
+  id String @id @default(uuid()) @db.Uuid
+  orderId String @db.Uuid
+  order Order @relation(fields: [orderId], references: [id])
+  status OrderStatus
+  note String?
+  occurredAt DateTime @default(now())
+  @@index([orderId, occurredAt])
+  @@map("order_events")
+}
+
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  actorProfileId String? @db.Uuid
+  actor Profile? @relation(fields: [actorProfileId], references: [id])
+  action String
+  entity String
+  entityId String
+  beforeJson Json?
+  afterJson Json?
+  occurredAt DateTime @default(now())
+  @@index([entity, entityId, occurredAt])
+  @@map("audit_logs")
+}
