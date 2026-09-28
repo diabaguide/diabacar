@@ -40,23 +40,24 @@ export const sensitiveTransitionsRequiringReason: readonly AuditAction[] = [
 export type AuditInput = {
   actorProfileId: string | null;
   action: AuditAction;
-  entity: string;
-  entityId: string;
-  before?: unknown;
-  after?: unknown;
+  entityType: string;
+  /** Nullable : un événement peut porter sur une entité non nommée (durcissement volontaire, contrat §4.5). */
+  entityId?: string | null;
+  oldValues?: unknown;
+  newValues?: unknown;
   reason?: string | null;
-  occurredAt?: Date;
+  createdAt?: Date;
 };
 
 export type AuditLogEntry = {
   readonly actorProfileId: string | null;
   readonly action: AuditAction;
-  readonly entity: string;
-  readonly entityId: string;
-  readonly beforeJson: unknown;
-  readonly afterJson: unknown;
+  readonly entityType: string;
+  readonly entityId: string | null;
+  readonly oldValues: unknown;
+  readonly newValues: unknown;
   readonly reason: string | null;
-  readonly occurredAt: Date;
+  readonly createdAt: Date;
 };
 
 const REDACTED = "[REDACTED]";
@@ -118,13 +119,12 @@ export function buildAuditEntry(input: AuditInput): AuditLogEntry {
     throw new AppError("VALIDATION", `Unknown audit action: ${String(input.action)}`);
   }
 
-  if (typeof input.entity !== "string" || input.entity.trim() === "") {
-    throw new AppError("VALIDATION", "Audit entity is required.");
+  if (typeof input.entityType !== "string" || input.entityType.trim() === "") {
+    throw new AppError("VALIDATION", "Audit entity type is required.");
   }
 
-  if (typeof input.entityId !== "string" || input.entityId.trim() === "") {
-    throw new AppError("VALIDATION", "Audit entity id is required.");
-  }
+  // `entityId` est désormais nullable : un événement peut porter sur une entité non nommée.
+  const entityId = typeof input.entityId === "string" ? input.entityId.trim() || null : null;
 
   const reason = input.reason?.trim() || null;
   if (sensitiveTransitionsRequiringReason.includes(input.action) && !reason) {
@@ -134,11 +134,11 @@ export function buildAuditEntry(input: AuditInput): AuditLogEntry {
   return Object.freeze({
     actorProfileId: input.actorProfileId,
     action: input.action,
-    entity: input.entity.trim(),
-    entityId: input.entityId.trim(),
-    beforeJson: sanitizeAuditPayload(input.before ?? null),
-    afterJson: sanitizeAuditPayload(input.after ?? null),
+    entityType: input.entityType.trim(),
+    entityId,
+    oldValues: sanitizeAuditPayload(input.oldValues ?? null),
+    newValues: sanitizeAuditPayload(input.newValues ?? null),
     reason,
-    occurredAt: input.occurredAt ?? new Date(),
+    createdAt: input.createdAt ?? new Date(),
   });
 }

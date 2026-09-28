@@ -86,7 +86,7 @@ d'être codés**, sinon le lot catalogue reproduira la divergence :
 - Anti-dérive de la matrice de droits par test (T15) — mécanisme à conserver, contenu à réarbitrer (C06).
 - Vérifié après ce changement : `npx tsc --noEmit` OK, `npx eslint .` OK, `npx vitest run` **14 fichiers / 88 tests verts**, `node scripts/verify-migrations.mjs` **ÉCART = 0**.
 
-## 5. Décision requise
+## 5. Décision requise — TRANCHÉE : option A
 
 Deux trajectoires, non équivalentes en coût :
 
@@ -118,3 +118,54 @@ Séquence proposée :
 3. Réarbitrer D01 (matrice rôle → permission) sur la liste du doc 07 §4, et C06 en conséquence.
 4. Trancher les questions désormais sourçables : D10 (tranché par doc 03 §9), D11, D12 (définitions de caractéristiques : doc 03 §5 et §8), D13 (`deleted_at` : doc 03 §6), D17 (**levée** : le modèle de données source existe — `docs/03_Modele_de_donnees_SOURCE.docx`).
 5. Modéliser le périmètre catalogue (§3.3) **avant** d'écrire les services du lot suivant.
+
+## 7. Réalisation (option A) — 2026-09-28
+
+Décision DIABACAR : **option A**, appliquée immédiatement, avant tout développement du lot catalogue.
+
+### 7.1 Ce qui a été fait
+
+- `prisma/schema.prisma` réécrit : snake_case (`@map`) sur **chaque** champ, 12 enums canoniques,
+  `staff_roles` N:N, `profiles.preferred_locale`, `customer_profiles.pricing_profile` /
+  `customer_segment` / `company_name` / `business_type` / `country` / horodatages,
+  `staff_profiles` prénom/nom/poste (plus de champ `active`), `roles.description`,
+  `permissions.name` / `module`, `audit_logs.entity_type` / `old_values` / `new_values` /
+  `ip_address` / `user_agent` / `created_at`, `vehicles.is_published`, tables `favorite_vehicles`
+  (clé composite) et `vehicle_media`, `saved_searches.criteria_json`.
+- Migrations **régénérées** : `ÉCART = 0` entre le schéma et M01..M04 ; 12 enums, 19 tables,
+  133 colonnes, 23 index, 22 clés étrangères ; **163 instructions** dont 76 générées par
+  `prisma migrate diff`. M05 : RLS sur 19 tables, 25 policies, 3 fonctions `SECURITY DEFINER`,
+  trigger `auth.users`, 4 buckets Storage.
+- **Correction de sécurité trouvée pendant la revue** (T16) : `vehicles` n'est plus exposé par un
+  `GRANT SELECT` global — le privilège est accordé colonne par colonne, `reseller_price` **exclu**.
+  RLS filtre des lignes, pas des colonnes : sans cela, une lecture PostgREST directe aurait exposé
+  le tarif Revendeur à un visiteur (contradiction avec doc 07 §3 et doc 17 §1). Contrôlé désormais
+  par `scripts/verify-migrations.mjs`.
+- Code adapté : statut de compte `ProfileStatus` (un statut ≠ `ACTIVE` reste non authentifié),
+  rôles N:N avec union dédupliquée des permissions (un membre sans rôle n'a aucun droit),
+  transitions de statut commercial canoniques, audit aux noms canoniques avec `entityId` nullable,
+  seed avec `name`/`module`/`description`, `staff:grant` par `staff_roles`.
+- Vérifié après réalignement : `npx prisma validate` OK, `npx tsc --noEmit` OK, `npx eslint .` OK,
+  `npx vitest run` **14 fichiers / 92 tests verts**, `node scripts/verify-migrations.mjs`
+  **ÉCART = 0** (code de sortie 0).
+
+### 7.2 Écarts d'alignement refermés
+
+A01–A09 (nommage et enums) → **refermés**. C01–C05, C07 (identité, RBAC, audit) → **refermés**.
+C06 (liste des permissions) → **ouvert, décision D21** : les 26 codes restent provisoirement en place,
+désormais chacun rattaché à son module canonique.
+`RequestStatus` reste hors corpus (écart rédactionnel E28) et `custom_requests` reste un modèle
+provisoire à remodeler au lot catalogue.
+
+### 7.3 Ce qui reste ouvert (aucune reprise de données : les migrations n'ont jamais été appliquées)
+
+| # | Reste à faire | Décision |
+| --- | --- | --- |
+| 1 | `vehicle_prices` + `exchange_rates` + `price_history` (transport séparé, périodes de validité) | D10 tranché, exécution au lot catalogue |
+| 2 | Référentiels administrables (énergies, boîtes, carrosseries, générations, finitions, couleurs, options, caractéristiques) | D11, D12 |
+| 3 | Champs véhicule du doc 03 §6 (~30), médias étendus (type/vidéo/vignette), `reference = DBC-YYYY-NNNNNN`, `deleted_at` | D13 + lot catalogue |
+| 4 | CRM/logistique/CMS (`lead_notes`, `lead_activities`, `reseller_applications`, `reservations`, éligibilité import, `pages`, `settings`, `analytics_events`) | lot catalogue |
+| 5 | Liste des permissions du corpus (doc 07 §4) et matrice rôle → permission | D01, D21 |
+| 6 | `phone` / `whatsapp` obligatoires sur `customer_profiles` | D22 (nullables en attendant) |
+| 7 | Retrait/révocation de rôle et cycle d'habilitation | D03, D23 |
+| 8 | Application réelle des migrations et tests RLS par identité | D15 (aucune base disponible) |

@@ -1,4 +1,5 @@
-export type ResellerStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+/** Enum canonique `ResellerStatus` (schéma Prisma) : `NOT_APPLICABLE` remplace l'ancien `NONE`. */
+export type ResellerStatus = "NOT_APPLICABLE" | "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
 
 export type PricingActor =
   | { kind: "visitor" }

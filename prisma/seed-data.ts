@@ -53,9 +53,9 @@ export const PERMISSION_CODES = [
 export type PermissionCodeFromSeed = (typeof PERMISSION_CODES)[number];
 
 /**
- * Libellés français des permissions, à usage humain uniquement (le modèle `Permission` ne stocke que
- * `code`). Formulations alignées sur les libellés d'actions du doc 07 ; elles n'ont aucun effet sur
- * le contrôle d'accès.
+ * Libellés français des permissions, écrits dans `Permission.name` par le seed (champ obligatoire du
+ * schéma canonique). Formulations alignées sur les libellés d'actions du doc 07 ; elles n'ont aucun
+ * effet sur le contrôle d'accès.
  */
 export const PERMISSION_LABELS: Record<PermissionCodeFromSeed, string> = {
   "vehicle.view": "Consulter les véhicules",
@@ -89,12 +89,54 @@ export const PERMISSION_LABELS: Record<PermissionCodeFromSeed, string> = {
 /** Rôles de personnel prévus par les documents (doc 13 §« Seeds »). */
 export type RoleCode = "ADMIN" | "COMMERCIAL";
 
-export const ROLE_DEFINITIONS: ReadonlyArray<{ code: RoleCode; name: string }> = [
+export const ROLE_DEFINITIONS: ReadonlyArray<{ code: RoleCode; name: string; description: string }> = [
   // D02 (docs/decisions.md) : « Administrateur » = ADMIN et « Commercial » = COMMERCIAL, seule lecture
-  // compatible entre les documents 07 et 08.
-  { code: "ADMIN", name: "Administrateur" },
-  { code: "COMMERCIAL", name: "Commercial" },
+  // compatible entre les documents 07 et 08. `Role.description` reste facultative au schéma, mais le
+  // seed la renseigne (phrase courte en français, contrat §4.6).
+  {
+    code: "ADMIN",
+    name: "Administrateur",
+    description: "Gestion globale : véhicules, clients, prospects, commandes, rôles, paramètres et audit.",
+  },
+  {
+    code: "COMMERCIAL",
+    name: "Commercial",
+    description: "Suivi opérationnel des véhicules, clients, prospects et commandes confiés.",
+  },
 ];
+
+/**
+ * Module de rattachement de chaque permission (doc 07 §4, contrat canonique §4.6).
+ * Source unique de `Permission.module` pour le seed ; les 26 codes ne changent pas.
+ */
+export const PERMISSION_MODULES: Record<PermissionCodeFromSeed, string> = {
+  "vehicle.view": "vehicle",
+  "vehicle.create": "vehicle",
+  "vehicle.edit": "vehicle",
+  "vehicle.publish": "vehicle",
+  "vehicle.reserve": "vehicle",
+  "vehicle.mark_sold": "vehicle",
+  "vehicle.price_edit": "vehicle",
+  "customer.view": "customer",
+  "customer.edit": "customer",
+  "lead.view": "crm",
+  "lead.assign": "crm",
+  "lead.update": "crm",
+  "order.view": "order",
+  "order.create": "order",
+  "order.update": "order",
+  "reseller.view": "customer",
+  "reseller.approve": "customer",
+  "reseller.reject": "customer",
+  "reseller.suspend": "customer",
+  "user.manage": "system",
+  "role.manage": "system",
+  "content.manage": "catalog",
+  "settings.manage": "system",
+  "analytics.view": "system",
+  "audit.view": "system",
+  "storage.private_read": "system",
+};
 
 /** Une ligne de la matrice rôle → permission. */
 export interface RolePermissionRow {

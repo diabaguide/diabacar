@@ -6,7 +6,7 @@ describe("resolveVehiclePrice", () => {
 
   it("returns standard price for visitors and standard customers", () => {
     expect(resolveVehiclePrice(vehicle, { kind: "visitor" })).toEqual({ amount: "12000000.00", currency: "XOF", priceType: "STANDARD" });
-    expect(resolveVehiclePrice(vehicle, { kind: "customer", resellerStatus: "NONE" })).toEqual({ amount: "12000000.00", currency: "XOF", priceType: "STANDARD" });
+    expect(resolveVehiclePrice(vehicle, { kind: "customer", resellerStatus: "NOT_APPLICABLE" })).toEqual({ amount: "12000000.00", currency: "XOF", priceType: "STANDARD" });
   });
 
   it("returns reseller price only for approved active resellers", () => {

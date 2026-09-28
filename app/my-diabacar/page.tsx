@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "My DIABACAR — Espace personnel",
   description: "Espace personnel DIABACAR : profil, statut Revendeur et déconnexion.",
-  // Doc 13 — les espaces privés sont exclus de l'indexation. Le contrôle d'accès reste la garde réelle.
+  // Doc 18 — les espaces privés sont exclus de l'indexation. Le contrôle d'accès reste la garde réelle.
   robots: { index: false, follow: false, nocache: true },
 };
 

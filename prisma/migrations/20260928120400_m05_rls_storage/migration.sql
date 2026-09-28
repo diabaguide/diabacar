@@ -6,15 +6,19 @@
 --   * RLS activée sur TOUTES les tables exposées du schéma « public ».
 --     Aucune policy n'est créée par défaut : « aucune policy » = aucun accès
 --     pour anon et authenticated (refus par défaut).
---   * Les tables de back-office (staff_profiles, roles, permissions,
---     role_permissions, audit_logs, order_events, vehicle_documents,
---     brands, vehicle_models) n'ont AUCUNE policy client : leur lecture et leur
---     écriture passent exclusivement par le serveur (rôle service_role).
+--   * Les tables de back-office (staff_profiles, staff_roles, roles,
+--     permissions, role_permissions, audit_logs, order_events,
+--     vehicle_documents, brands, vehicle_models) n'ont AUCUNE policy client :
+--     leur lecture et leur écriture passent exclusivement par le serveur
+--     (rôle service_role).
 --   * Les requêtes « lignes propres » s'appuient sur deux fonctions helper
 --     SECURITY DEFINER STABLE, ce qui évite la récursion des policies sur
 --     « profiles » et contourne RLS pour la seule jointure auth.uid().
 --   * Aucune attribution de rôle (user_type/status/reseller_status) n'est
 --     déductible des métadonnées éditables par l'utilisateur (T03).
+--   * Nommage canonique : colonnes snake_case non quotées ; les rôles du
+--     personnel sont N:N via staff_roles ; l'activité d'un membre du personnel
+--     est portée par profiles.status (= 'ACTIVE').
 -- ============================================================================
 
 -- Extensions (idempotent) ----------------------------------------------------
@@ -45,11 +49,12 @@ SET search_path = public, pg_temp
 AS $$
   SELECT c.id
   FROM public.customer_profiles c
-  JOIN public.profiles p ON p.id = c."profileId"
+  JOIN public.profiles p ON p.id = c.profile_id
   WHERE p.auth_user_id = auth.uid()
 $$;
 
 -- Vrai si l'utilisateur authentifié est un membre du personnel actif portant le rôle ADMIN.
+-- Les rôles sont N:N (staff_roles) et l'activité du personnel = profiles.status = 'ACTIVE'.
 CREATE OR REPLACE FUNCTION public.current_is_admin()
 RETURNS boolean
 LANGUAGE sql
@@ -60,10 +65,11 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.staff_profiles s
-    JOIN public.profiles p ON p.id = s."profileId"
-    JOIN public.roles r ON r.id = s."roleId"
+    JOIN public.profiles p ON p.id = s.profile_id
+    JOIN public.staff_roles sr ON sr.staff_id = s.id
+    JOIN public.roles r ON r.id = sr.role_id
     WHERE p.auth_user_id = auth.uid()
-      AND s.active = true
+      AND p.status = 'ACTIVE'
       AND r.code = 'ADMIN'
   )
 $$;
@@ -92,8 +98,8 @@ DECLARE
   v_first text;
   v_last  text;
 BEGIN
-  INSERT INTO public.profiles (id, auth_user_id, "userType", status, "createdAt", "updatedAt")
-  VALUES (gen_random_uuid(), NEW.id, 'CUSTOMER', 'ACTIVE', now(), now())
+  INSERT INTO public.profiles (id, auth_user_id, user_type, status, preferred_locale, created_at, updated_at)
+  VALUES (gen_random_uuid(), NEW.id, 'CUSTOMER', 'ACTIVE', 'fr', now(), now())
   ON CONFLICT (auth_user_id) DO NOTHING;
 
   SELECT id INTO v_profile_id FROM public.profiles WHERE auth_user_id = NEW.id;
@@ -104,9 +110,15 @@ BEGIN
   v_first := COALESCE(NULLIF(btrim(NEW.raw_user_meta_data ->> 'first_name'), ''), '');
   v_last  := COALESCE(NULLIF(btrim(NEW.raw_user_meta_data ->> 'last_name'), ''), '');
 
-  INSERT INTO public.customer_profiles (id, "profileId", "firstName", "lastName", "resellerStatus")
-  VALUES (gen_random_uuid(), v_profile_id, v_first, v_last, 'NONE')
-  ON CONFLICT ("profileId") DO NOTHING;
+  INSERT INTO public.customer_profiles (
+    id, profile_id, pricing_profile, customer_segment, reseller_status,
+    first_name, last_name, country, created_at, updated_at
+  )
+  VALUES (
+    gen_random_uuid(), v_profile_id, 'STANDARD', 'INDIVIDUAL', 'NOT_APPLICABLE',
+    v_first, v_last, 'SN', now(), now()
+  )
+  ON CONFLICT (profile_id) DO NOTHING;
 
   RETURN NEW;
 END;
@@ -130,20 +142,24 @@ AS $$
 DECLARE
   v_created integer := 0;
 BEGIN
-  INSERT INTO public.profiles (id, auth_user_id, "userType", status, "createdAt", "updatedAt")
-  SELECT gen_random_uuid(), u.id, 'CUSTOMER', 'ACTIVE', now(), now()
+  INSERT INTO public.profiles (id, auth_user_id, user_type, status, preferred_locale, created_at, updated_at)
+  SELECT gen_random_uuid(), u.id, 'CUSTOMER', 'ACTIVE', 'fr', now(), now()
   FROM auth.users u
   LEFT JOIN public.profiles p ON p.auth_user_id = u.id
   WHERE p.id IS NULL
   ON CONFLICT (auth_user_id) DO NOTHING;
   GET DIAGNOSTICS v_created = ROW_COUNT;
 
-  INSERT INTO public.customer_profiles (id, "profileId", "firstName", "lastName", "resellerStatus")
-  SELECT gen_random_uuid(), p.id, '', '', 'NONE'
+  INSERT INTO public.customer_profiles (
+    id, profile_id, pricing_profile, customer_segment, reseller_status,
+    first_name, last_name, country, created_at, updated_at
+  )
+  SELECT gen_random_uuid(), p.id, 'STANDARD', 'INDIVIDUAL', 'NOT_APPLICABLE',
+         '', '', 'SN', now(), now()
   FROM public.profiles p
-  LEFT JOIN public.customer_profiles c ON c."profileId" = p.id
-  WHERE p."userType" = 'CUSTOMER' AND c.id IS NULL
-  ON CONFLICT ("profileId") DO NOTHING;
+  LEFT JOIN public.customer_profiles c ON c.profile_id = p.id
+  WHERE p.user_type = 'CUSTOMER' AND c.id IS NULL
+  ON CONFLICT (profile_id) DO NOTHING;
 
   RETURN v_created;
 END;
@@ -162,43 +178,56 @@ REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
 -- ----------------------------------------------------------------------------
 -- 4. Activation de RLS sur toutes les tables (refus par défaut)
 -- ----------------------------------------------------------------------------
-ALTER TABLE public.profiles           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_profiles  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.staff_profiles     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.roles              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.permissions        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.role_permissions   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.brands             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vehicle_models     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vehicles           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vehicle_images     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vehicle_documents  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.favorites          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.saved_searches     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.leads              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.custom_requests    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_events       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_profiles    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.staff_profiles       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roles                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.permissions          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.staff_roles          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.role_permissions     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.brands               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_models       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicles             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_media        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_documents    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorite_vehicles    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saved_searches       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leads                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.custom_requests      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_events         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs           ENABLE ROW LEVEL SECURITY;
 
 -- ----------------------------------------------------------------------------
--- 5. Catalogue public : véhicules publiés et images publiques (lecture seule)
+-- 5. Catalogue public : véhicules publiés et médias publics (lecture seule)
+--    La publication (is_published) est distincte du statut commercial :
+--    c'est elle, et elle seule, qui gouverne l'accès public.
 -- ----------------------------------------------------------------------------
-GRANT SELECT ON public.vehicles       TO anon, authenticated;
-GRANT SELECT ON public.vehicle_images TO anon, authenticated;
+-- GRANT SELECT colonne par colonne : `reseller_price` est EXCLU de la lecture cliente.
+-- L'exigence du doc 07 §3 (« voir prix Revendeur : Non pour visiteur et Standard ») et la
+-- menace « accès tarif Revendeur » du doc 17 §1 imposent que le tarif Revendeur ne soit
+-- jamais lisible par un client, même au travers de l'API PostgREST directe : un
+-- `GRANT SELECT` global sur la table exposerait la colonne malgré RLS (qui filtre des
+-- lignes, pas des colonnes). Le tarif Revendeur ne peut donc être servi que par le
+-- serveur (`service_role`) via `services/pricing.service.ts`.
+GRANT SELECT (id, reference, slug, brand_id, model_id, title, condition, location,
+              commercial_status, is_published, year, mileage, fuel, transmission,
+              public_price, currency, published_at, created_at, updated_at)
+  ON public.vehicles TO anon, authenticated;
+GRANT SELECT ON public.vehicle_media TO anon, authenticated;
 
 CREATE POLICY vehicles_select_published ON public.vehicles
   FOR SELECT TO anon, authenticated
-  USING (status = 'PUBLISHED');
+  USING (is_published = true);
 
--- L'image n'est lisible que si elle est PUBLIQUE et rattachée à une fiche PUBLISHED.
-CREATE POLICY vehicle_images_select_published ON public.vehicle_images
+-- Le média n'est lisible que s'il est PUBLIC et rattaché à une fiche publiée.
+CREATE POLICY vehicle_media_select_published ON public.vehicle_media
   FOR SELECT TO anon, authenticated
   USING (
     visibility = 'PUBLIC'
     AND EXISTS (
       SELECT 1 FROM public.vehicles v
-      WHERE v.id = vehicle_images."vehicleId" AND v.status = 'PUBLISHED'
+      WHERE v.id = vehicle_media.vehicle_id AND v.is_published = true
     )
   );
 
@@ -214,10 +243,11 @@ CREATE POLICY vehicle_images_select_published ON public.vehicle_images
 -- ----------------------------------------------------------------------------
 GRANT SELECT ON public.profiles TO authenticated;
 -- profiles ne porte aucune colonne modifiable par le client : aucun GRANT UPDATE
--- n'est accordé (userType et status sont des champs serveur).
+-- n'est accordé (user_type et status sont des champs serveur).
 GRANT SELECT ON public.customer_profiles TO authenticated;
--- Mise à jour colonne par colonne : « profileId » et « resellerStatus » sont exclus.
-GRANT UPDATE ("firstName", "lastName", phone, whatsapp, city, country)
+-- Mise à jour colonne par colonne : profile_id, pricing_profile, customer_segment
+-- et reseller_status sont exclus (champs serveur).
+GRANT UPDATE (first_name, last_name, phone, whatsapp, country, city, company_name, business_type)
   ON public.customer_profiles TO authenticated;
 
 CREATE POLICY profiles_select_own ON public.profiles
@@ -226,46 +256,46 @@ CREATE POLICY profiles_select_own ON public.profiles
 
 CREATE POLICY customer_profiles_select_own ON public.customer_profiles
   FOR SELECT TO authenticated
-  USING ("profileId" = public.current_profile_id());
+  USING (profile_id = public.current_profile_id());
 
 CREATE POLICY customer_profiles_update_own ON public.customer_profiles
   FOR UPDATE TO authenticated
-  USING ("profileId" = public.current_profile_id())
-  WITH CHECK ("profileId" = public.current_profile_id());
+  USING (profile_id = public.current_profile_id())
+  WITH CHECK (profile_id = public.current_profile_id());
 
 -- ----------------------------------------------------------------------------
 -- 7. Favoris et recherches enregistrées : CRUD de ses propres lignes
 -- ----------------------------------------------------------------------------
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.favorites      TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_searches TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.favorite_vehicles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_searches    TO authenticated;
 
-CREATE POLICY favorites_select_own ON public.favorites
+CREATE POLICY favorite_vehicles_select_own ON public.favorite_vehicles
   FOR SELECT TO authenticated
-  USING ("customerId" = public.current_customer_profile_id());
-CREATE POLICY favorites_insert_own ON public.favorites
+  USING (customer_id = public.current_customer_profile_id());
+CREATE POLICY favorite_vehicles_insert_own ON public.favorite_vehicles
   FOR INSERT TO authenticated
-  WITH CHECK ("customerId" = public.current_customer_profile_id());
-CREATE POLICY favorites_update_own ON public.favorites
+  WITH CHECK (customer_id = public.current_customer_profile_id());
+CREATE POLICY favorite_vehicles_update_own ON public.favorite_vehicles
   FOR UPDATE TO authenticated
-  USING ("customerId" = public.current_customer_profile_id())
-  WITH CHECK ("customerId" = public.current_customer_profile_id());
-CREATE POLICY favorites_delete_own ON public.favorites
+  USING (customer_id = public.current_customer_profile_id())
+  WITH CHECK (customer_id = public.current_customer_profile_id());
+CREATE POLICY favorite_vehicles_delete_own ON public.favorite_vehicles
   FOR DELETE TO authenticated
-  USING ("customerId" = public.current_customer_profile_id());
+  USING (customer_id = public.current_customer_profile_id());
 
 CREATE POLICY saved_searches_select_own ON public.saved_searches
   FOR SELECT TO authenticated
-  USING ("customerId" = public.current_customer_profile_id());
+  USING (customer_id = public.current_customer_profile_id());
 CREATE POLICY saved_searches_insert_own ON public.saved_searches
   FOR INSERT TO authenticated
-  WITH CHECK ("customerId" = public.current_customer_profile_id());
+  WITH CHECK (customer_id = public.current_customer_profile_id());
 CREATE POLICY saved_searches_update_own ON public.saved_searches
   FOR UPDATE TO authenticated
-  USING ("customerId" = public.current_customer_profile_id())
-  WITH CHECK ("customerId" = public.current_customer_profile_id());
+  USING (customer_id = public.current_customer_profile_id())
+  WITH CHECK (customer_id = public.current_customer_profile_id());
 CREATE POLICY saved_searches_delete_own ON public.saved_searches
   FOR DELETE TO authenticated
-  USING ("customerId" = public.current_customer_profile_id());
+  USING (customer_id = public.current_customer_profile_id());
 
 -- ----------------------------------------------------------------------------
 -- 8. Prospects, commandes et demandes : LECTURE de ses propres lignes uniquement.
@@ -278,19 +308,20 @@ GRANT SELECT ON public.custom_requests TO authenticated;
 
 CREATE POLICY leads_select_own ON public.leads
   FOR SELECT TO authenticated
-  USING ("customerId" IS NOT NULL AND "customerId" = public.current_customer_profile_id());
+  USING (customer_id IS NOT NULL AND customer_id = public.current_customer_profile_id());
 
 CREATE POLICY orders_select_own ON public.orders
   FOR SELECT TO authenticated
-  USING ("customerId" = public.current_customer_profile_id());
+  USING (customer_id = public.current_customer_profile_id());
 
 CREATE POLICY custom_requests_select_own ON public.custom_requests
   FOR SELECT TO authenticated
-  USING ("customerId" IS NOT NULL AND "customerId" = public.current_customer_profile_id());
+  USING (customer_id IS NOT NULL AND customer_id = public.current_customer_profile_id());
 
--- NOTE : « order_events » et « vehicle_documents » sont en refus par défaut
--- (RLS activée, aucune policy) : journaux et pièces privées servis uniquement
--- par le serveur, qui émet des URL signées de courte durée (décision T09).
+-- NOTE : « order_events », « staff_profiles », « staff_roles », « roles »,
+-- « permissions » et « role_permissions » sont en refus par défaut (RLS
+-- activée, aucune policy) : journaux, RBAC et pièces privées sont servis
+-- uniquement par le serveur (décision T09).
 
 -- ----------------------------------------------------------------------------
 -- 9. Buckets Storage (doc 11, doc 13 M05)
@@ -312,17 +343,17 @@ ON CONFLICT (id) DO NOTHING;
 -- garantie au niveau du stockage est exigée, basculer ce bucket en
 -- « public = false » par migration (l'application ne doit alors consommer que
 -- des URL signées).
-CREATE POLICY storage_vehicle_images_read ON storage.objects
+CREATE POLICY storage_vehicle_media_read ON storage.objects
   FOR SELECT TO anon, authenticated
   USING (
     bucket_id = 'vehicle-images'
     AND EXISTS (
       SELECT 1
-      FROM public.vehicle_images vi
-      JOIN public.vehicles v ON v.id = vi."vehicleId"
-      WHERE vi.path = storage.objects.name
-        AND vi.visibility = 'PUBLIC'
-        AND v.status = 'PUBLISHED'
+      FROM public.vehicle_media vm
+      JOIN public.vehicles v ON v.id = vm.vehicle_id
+      WHERE vm.storage_path = storage.objects.name
+        AND vm.visibility = 'PUBLIC'
+        AND v.is_published = true
     )
   );
 

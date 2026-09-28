@@ -1,14 +1,27 @@
-export type VehicleStatus = "DRAFT" | "REVIEW" | "PUBLISHED" | "RESERVED" | "SOLD" | "WITHDRAWN";
+export type VehicleCommercialStatus =
+  | "DRAFT"
+  | "AVAILABLE"
+  | "RESERVED"
+  | "SOLD"
+  | "UNAVAILABLE"
+  | "ARCHIVED";
 
-const allowedVehicleTransitions: Readonly<Record<VehicleStatus, readonly VehicleStatus[]>> = {
-  DRAFT: ["REVIEW"],
-  REVIEW: ["PUBLISHED"],
-  PUBLISHED: ["RESERVED", "WITHDRAWN"],
-  RESERVED: ["SOLD", "PUBLISHED"],
+/**
+ * Transitions autorisées de `VehicleCommercialStatus` (contrat canonique §4.4).
+ * La publication (`Vehicle.isPublished`) n'est pas un statut : elle n'est pas modélisée ici.
+ */
+const allowedVehicleTransitions: Readonly<Record<VehicleCommercialStatus, readonly VehicleCommercialStatus[]>> = {
+  DRAFT: ["AVAILABLE", "ARCHIVED"],
+  AVAILABLE: ["RESERVED", "UNAVAILABLE", "ARCHIVED"],
+  RESERVED: ["SOLD", "AVAILABLE"],
   SOLD: [],
-  WITHDRAWN: [],
+  UNAVAILABLE: ["AVAILABLE", "ARCHIVED"],
+  ARCHIVED: [],
 };
 
-export function canTransitionVehicleStatus(from: VehicleStatus, to: VehicleStatus): boolean {
+export function canTransitionVehicleStatus(
+  from: VehicleCommercialStatus,
+  to: VehicleCommercialStatus,
+): boolean {
   return allowedVehicleTransitions[from].includes(to);
 }

@@ -1,7 +1,7 @@
 import { describeResellerStatus } from "@/components/profile/profile-view";
 
 const toneClasses: Record<string, string> = {
-  NONE: "bg-[#f4f7fb] text-[#011D4F] border-slate-200",
+  NOT_APPLICABLE: "bg-[#f4f7fb] text-[#011D4F] border-slate-200",
   PENDING: "bg-[#e8f4ff] text-[#0354A3] border-[#b8ddff]",
   APPROVED: "bg-[#e6f9f1] text-[#036b4b] border-[#b4e6d2]",
   REJECTED: "bg-[#fdf1f1] text-[#95312a] border-[#f3cfcb]",

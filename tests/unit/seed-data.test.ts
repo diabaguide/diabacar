@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PERMISSION_CODES,
   PERMISSION_LABELS,
+  PERMISSION_MODULES,
   ROLE_DEFINITIONS,
   ROLE_PERMISSION_MATRIX,
   type PermissionCodeFromSeed,
@@ -42,6 +43,29 @@ describe("seed-data", () => {
 
   it("labels every permission exactly once", () => {
     expect(Object.keys(PERMISSION_LABELS).sort()).toEqual([...PERMISSION_CODES].sort());
+  });
+
+  it("assigns every permission to a non-empty canonical module (contrat §4.6)", () => {
+    expect(Object.keys(PERMISSION_MODULES).sort()).toEqual([...PERMISSION_CODES].sort());
+
+    for (const code of PERMISSION_CODES) {
+      expect(PERMISSION_MODULES[code].trim().length).toBeGreaterThan(0);
+    }
+    // Regroupement imposé par le contrat : customer.* et reseller.* → customer, lead.* → crm.
+    expect(PERMISSION_MODULES["vehicle.view"]).toBe("vehicle");
+    expect(PERMISSION_MODULES["customer.edit"]).toBe("customer");
+    expect(PERMISSION_MODULES["reseller.approve"]).toBe("customer");
+    expect(PERMISSION_MODULES["lead.view"]).toBe("crm");
+    expect(PERMISSION_MODULES["order.view"]).toBe("order");
+    expect(PERMISSION_MODULES["content.manage"]).toBe("catalog");
+    expect(PERMISSION_MODULES["audit.view"]).toBe("system");
+    expect(PERMISSION_MODULES["storage.private_read"]).toBe("system");
+  });
+
+  it("describes every seeded role with a non-empty French description", () => {
+    for (const role of ROLE_DEFINITIONS) {
+      expect(role.description.trim().length).toBeGreaterThan(0);
+    }
   });
 
   it("seeds only the two roles documented by the specifications", () => {

@@ -16,11 +16,14 @@ policies, buckets Storage) est écrit à la main dans les mêmes migrations, sou
 
 | Lot | Dossier | Contenu |
 | --- | --- | --- |
-| M01 | `20260928120000_m01_identite` | extension `pgcrypto`, 10 enums, `profiles`, `customer_profiles`, `staff_profiles`, `roles`, `permissions`, `role_permissions` |
-| M02 | `20260928120100_m02_referentiels` | `brands`, `vehicle_models`, `vehicles`, `vehicle_images`, `vehicle_documents` |
-| M03 | `20260928120200_m03_activite_client` | `favorites`, `saved_searches`, `leads`, `custom_requests`, `orders` |
-| M04 | `20260928120300_m04_journaux_audit_index` | `order_events`, `audit_logs`, `CHECK` sur les montants (T04), index de clés étrangères et index partiel catalogue (T06), audit append-only (T05) |
-| M05 | `20260928120400_m05_rls_storage` | trigger `auth.users` + `handle_new_auth_user()` + `repair_orphan_profiles()` (T03), RLS (18 tables), 25 policies, 4 buckets Storage |
+| M01 | `20260928120000_m01_identite` | extension `pgcrypto`, 5 enums d'identité, `profiles`, `customer_profiles`, `staff_profiles`, `roles`, `permissions`, `staff_roles`, `role_permissions` |
+| M02 | `20260928120100_m02_referentiels` | 4 enums véhicule, `brands`, `vehicle_models`, `vehicles`, `vehicle_media`, `vehicle_documents` |
+| M03 | `20260928120200_m03_activite_client` | 3 enums d'activité, `favorite_vehicles`, `saved_searches`, `leads`, `custom_requests`, `orders` |
+| M04 | `20260928120300_m04_journaux_audit_index` | `order_events`, `audit_logs`, `CHECK` sur les montants (T04), index de clés étrangères et index partiel catalogue `WHERE is_published = true` (T06), audit append-only (T05) |
+| M05 | `20260928120400_m05_rls_storage` | trigger `auth.users` + `handle_new_auth_user()` + `repair_orphan_profiles()` (T03), RLS (19 tables), 25 policies, 4 buckets Storage |
+
+Tous les noms suivent le contrat canonique (`docs/12_Schema_Prisma_final_propose.docx`) : colonnes `snake_case`,
+rôles du personnel N:N via `staff_roles`, publication distincte du statut commercial (`vehicles.is_published`).
 
 `migration_lock.toml` porte `provider = "postgresql"`.
 

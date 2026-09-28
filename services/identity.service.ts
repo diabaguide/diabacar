@@ -8,17 +8,26 @@ import { AppError } from "@/lib/errors";
  * Supabase Auth reste la seule source d'identité : aucune table métier ne duplique le mot de passe.
  * Ce service relie une identité Auth à son profil métier de façon **idempotente** et ne dérive
  * JAMAIS `userType`, `status` ou `resellerStatus` d'une donnée fournie par le navigateur (dev.md §5-§6).
+ *
+ * Statut de compte (contrat canonique §4.1) : tout statut ≠ `ACTIVE` (`SUSPENDED` *ou* `DISABLED`)
+ * est traité comme non authentifié, exactement comme l'ancien `SUSPENDED`.
  */
 export type UserType = "CUSTOMER" | "STAFF";
-export type AccountStatus = "ACTIVE" | "SUSPENDED";
+export type ProfileStatus = "ACTIVE" | "SUSPENDED" | "DISABLED";
+
+/** Un rôle attribué à un membre du personnel, avec ses permissions propres (relation N:N `staff_roles`). */
+export type StaffRoleRecord = {
+  code: string;
+  permissions: PermissionCode[];
+};
 
 export type ProfileRecord = {
   id: string;
   authUserId: string;
   userType: UserType;
-  status: AccountStatus;
+  status: ProfileStatus;
   customer: { id: string; resellerStatus: ResellerStatus } | null;
-  staff: { id: string; active: boolean; roleCode: string; permissions: PermissionCode[] } | null;
+  staff: { id: string; roles: StaffRoleRecord[]; permissions: PermissionCode[] } | null;
 };
 
 export type Actor =
@@ -27,16 +36,20 @@ export type Actor =
       kind: "customer";
       profileId: string;
       customerId: string;
-      status: AccountStatus;
+      status: ProfileStatus;
       resellerStatus: ResellerStatus;
     }
   | {
       kind: "staff";
       profileId: string;
       staffId: string;
-      status: AccountStatus;
+      status: ProfileStatus;
+      /** `status === "ACTIVE"` (contrat §4.2) : l'activité du personnel est portée par le profil. */
       active: boolean;
-      roleCode: string;
+      /** Rôles N:N avec les permissions de chacun (contrat §4.2). */
+      roles: StaffRoleRecord[];
+      roleCodes: string[];
+      /** Union dédupliquée des permissions de tous les rôles (contrat §4.2). */
       permissions: PermissionCode[];
     }
   | { kind: "suspended"; profileId: string; userType: UserType };
@@ -52,23 +65,34 @@ export type SessionLike = {
   defaults?: { firstName: string; lastName: string };
 };
 
+/**
+ * Union dédupliquée, triée, des permissions de plusieurs rôles (contrat §4.2).
+ * Source unique partagée avec le repository pour garantir un résultat déterministe.
+ */
+export function unionRolePermissions(roles: readonly StaffRoleRecord[]): PermissionCode[] {
+  const union = new Set<PermissionCode>();
+  for (const role of roles) {
+    for (const permission of role.permissions) {
+      union.add(permission);
+    }
+  }
+  return [...union].sort();
+}
+
 export function toActor(profile: ProfileRecord): Actor {
   if (profile.status !== "ACTIVE") {
     return { kind: "suspended", profileId: profile.id, userType: profile.userType };
   }
 
   if (profile.userType === "STAFF" && profile.staff) {
-    if (!profile.staff.active) {
-      return { kind: "suspended", profileId: profile.id, userType: profile.userType };
-    }
-
     return {
       kind: "staff",
       profileId: profile.id,
       staffId: profile.staff.id,
       status: profile.status,
-      active: profile.staff.active,
-      roleCode: profile.staff.roleCode,
+      active: profile.status === "ACTIVE",
+      roles: profile.staff.roles,
+      roleCodes: profile.staff.roles.map((role) => role.code),
       permissions: profile.staff.permissions,
     };
   }

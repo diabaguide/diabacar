@@ -293,26 +293,26 @@ function main() {
   } else {
     const m04Text = normalize(m04.sql);
     const expectedChecks = [
-      'vehicles_publicprice_non_negative',
-      'vehicles_resellerprice_non_negative',
-      'orders_agreedprice_non_negative',
-      'custom_requests_budgetmin_non_negative',
-      'custom_requests_budgetmax_non_negative',
+      'vehicles_public_price_non_negative',
+      'vehicles_reseller_price_non_negative',
+      'orders_agreed_price_non_negative',
+      'custom_requests_budget_min_non_negative',
+      'custom_requests_budget_max_non_negative',
       'custom_requests_budget_range',
     ];
     for (const c of expectedChecks) if (!m04Text.includes(c)) fail(`M04 : contrainte CHECK « ${c} » absente (T04)`);
     for (const idx of [
-      'staff_profiles_roleid_idx',
-      'leads_customerid_idx',
-      'leads_vehicleid_idx',
-      'orders_vehicleid_idx',
-      'custom_requests_customerid_idx',
-      'audit_logs_actorprofileid_idx',
-      'vehicles_publishedat_idx',
+      'staff_roles_role_id_idx',
+      'leads_customer_id_idx',
+      'leads_vehicle_id_idx',
+      'orders_vehicle_id_idx',
+      'custom_requests_customer_id_idx',
+      'audit_logs_actor_profile_id_idx',
+      'vehicles_published_at_idx',
     ]) {
       if (!m04Text.includes(idx)) fail(`M04 : index « ${idx} » absent (T06)`);
     }
-    if (!/where status = 'published'/.test(m04Text)) fail('M04 : index partiel catalogue (WHERE status = PUBLISHED) absent (T06)');
+    if (!/where is_published = true/.test(m04Text)) fail('M04 : index partiel catalogue (WHERE is_published = true) absent (T06)');
     if (!m04Text.includes('revoke update, delete')) fail('M04 : REVOKE UPDATE, DELETE sur audit_logs absent (T05)');
     if (!/before update or delete on public\.audit_logs/.test(m04Text)) fail('M04 : trigger append-only sur audit_logs absent (T05)');
   }
@@ -333,18 +333,18 @@ function main() {
     const only = (t, ...cs) => cmdsOf(t).size === cs.length && cs.every((c) => cmdsOf(t).has(c));
 
     // refus par défaut : aucune policy client sur ces tables
-    for (const t of ['staff_profiles', 'roles', 'permissions', 'role_permissions', 'audit_logs', 'brands', 'vehicle_models', 'vehicle_documents', 'order_events']) {
+    for (const t of ['staff_profiles', 'staff_roles', 'roles', 'permissions', 'role_permissions', 'audit_logs', 'brands', 'vehicle_models', 'vehicle_documents', 'order_events']) {
       if (cmdsOf(t).size) fail(`M05 : policy client inattendue sur « ${t} » (${[...cmdsOf(t)].join(', ')}) — refus par défaut attendu`);
     }
     // catalogue public : SELECT seulement
     if (!only('vehicles', 'select')) fail(`M05 : « vehicles » doit n'accorder que SELECT (obtenu : ${[...cmdsOf('vehicles')].join(', ') || 'aucune policy'})`);
-    if (!only('vehicle_images', 'select')) fail(`M05 : « vehicle_images » doit n'accorder que SELECT (obtenu : ${[...cmdsOf('vehicle_images')].join(', ') || 'aucune policy'})`);
+    if (!only('vehicle_media', 'select')) fail(`M05 : « vehicle_media » doit n'accorder que SELECT (obtenu : ${[...cmdsOf('vehicle_media')].join(', ') || 'aucune policy'})`);
     // lignes propres : lecture seule pour leads/orders/custom_requests
     for (const t of ['leads', 'orders', 'custom_requests']) {
       if (!only(t, 'select')) fail(`M05 : « ${t} » doit n'accorder que SELECT de ses lignes (obtenu : ${[...cmdsOf(t)].join(', ') || 'aucune policy'})`);
     }
     // favoris et recherches : CRUD complet de ses lignes
-    for (const t of ['favorites', 'saved_searches']) {
+    for (const t of ['favorite_vehicles', 'saved_searches']) {
       if (!has(t, 'select', 'insert', 'update', 'delete')) fail(`M05 : « ${t} » doit accorder SELECT/INSERT/UPDATE/DELETE de ses lignes`);
     }
     // profil : lecture de sa ligne ; profil client : lecture + mise à jour
@@ -358,7 +358,7 @@ function main() {
     for (const m of m05Text.matchAll(grantUpdateRe)) {
       grantedUpdate.set(m[2], new Set(m[1].split(',').map((s) => s.trim().replace(/"/g, ''))));
     }
-    const blocked = ['usertype', 'status', 'resellerstatus', 'profileid'];
+    const blocked = ['user_type', 'status', 'reseller_status', 'profile_id', 'pricing_profile', 'customer_segment'];
     for (const [table, cols] of grantedUpdate) {
       for (const c of blocked) {
         if (cols.has(c)) fail(`M05 : GRANT UPDATE sur ${table}.${c} interdit (champ protégé)`);
@@ -366,6 +366,23 @@ function main() {
     }
     if (!grantedUpdate.has('customer_profiles')) {
       fail('M05 : aucun GRANT UPDATE colonne par colonne sur customer_profiles');
+    }
+    // Catalogue public : aucun GRANT SELECT global sur « vehicles » (il exposerait
+    // « reseller_price » au client malgré RLS, qui filtre des lignes et non des colonnes).
+    if (/grant select on public\.vehicles/.test(m05Text)) {
+      fail('M05 : GRANT SELECT global sur « vehicles » interdit (exposerait reseller_price)');
+    }
+    const vehiclesColumnGrant = /grant select \(([^)]*)\) on public\.vehicles/.exec(m05Text);
+    if (!vehiclesColumnGrant) {
+      fail('M05 : GRANT SELECT colonne par colonne absent sur « vehicles »');
+    } else {
+      const grantedCols = new Set(vehiclesColumnGrant[1].split(',').map((s) => s.trim().replace(/"/g, '')));
+      if (grantedCols.has('reseller_price')) {
+        fail('M05 : GRANT SELECT sur vehicles.reseller_price interdit (tarif Revendeur, doc 07 §3)');
+      }
+      if (!grantedCols.has('public_price')) {
+        fail('M05 : GRANT SELECT sur vehicles.public_price attendu (prix Standard public)');
+      }
     }
     // storage : au moins une policy sur storage.objects
     if (!byTable.get('objects')?.size) {

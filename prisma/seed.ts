@@ -20,27 +20,30 @@ import { PrismaClient } from "@prisma/client";
 import { assertNonProductionDatabase, fail, loadLocalEnv } from "../scripts/database-guard";
 import {
   PERMISSION_CODES,
+  PERMISSION_LABELS,
+  PERMISSION_MODULES,
   ROLE_DEFINITIONS,
   ROLE_PERMISSION_MATRIX,
   type RoleCode,
 } from "./seed-data";
 
 export async function seed(prisma: PrismaClient): Promise<void> {
-  // 1. Permissions — clé naturelle : code.
+  // 1. Permissions — clé naturelle : code. `name` (libellé français) et `module` sont obligatoires au
+  //    schéma : ils sont réalignés à chaque exécution (le code, lui, ne change jamais).
   for (const code of PERMISSION_CODES) {
     await prisma.permission.upsert({
       where: { code },
-      update: {},
-      create: { code },
+      update: { name: PERMISSION_LABELS[code], module: PERMISSION_MODULES[code] },
+      create: { code, name: PERMISSION_LABELS[code], module: PERMISSION_MODULES[code] },
     });
   }
 
-  // 2. Rôles — clé naturelle : code. Le libellé est réaligné s'il a changé.
+  // 2. Rôles — clé naturelle : code. Le libellé et la description sont réalignés s'ils ont changé.
   for (const role of ROLE_DEFINITIONS) {
     await prisma.role.upsert({
       where: { code: role.code },
-      update: { name: role.name },
-      create: { code: role.code, name: role.name },
+      update: { name: role.name, description: role.description },
+      create: { code: role.code, name: role.name, description: role.description },
     });
   }
 

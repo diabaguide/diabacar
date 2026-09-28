@@ -7,8 +7,8 @@ import {
 } from "@/services/profile.service";
 import type { Actor } from "@/services/identity.service";
 
-const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NONE" };
-const otherCustomer: Actor = { kind: "customer", profileId: "p2", customerId: "c2", status: "ACTIVE", resellerStatus: "NONE" };
+const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NOT_APPLICABLE" };
+const otherCustomer: Actor = { kind: "customer", profileId: "p2", customerId: "c2", status: "ACTIVE", resellerStatus: "NOT_APPLICABLE" };
 const visitor: Actor = { kind: "visitor" };
 
 function repository(): CustomerProfileRepository & { updates: { customerId: string; data: unknown }[] } {
@@ -20,7 +20,7 @@ function repository(): CustomerProfileRepository & { updates: { customerId: stri
     whatsapp: null,
     city: "Dakar",
     country: "Sénégal",
-    resellerStatus: "NONE",
+    resellerStatus: "NOT_APPLICABLE",
   };
 
   return {
@@ -42,7 +42,17 @@ describe("parseCustomerProfileUpdate", () => {
   });
 
   it("rejects every self-editable privilege field", () => {
-    for (const field of ["userType", "status", "resellerStatus", "roleId", "active", "profileId", "customerId"]) {
+    for (const field of [
+      "userType",
+      "status",
+      "resellerStatus",
+      "pricingProfile",
+      "segment",
+      "roleCodes",
+      "roles",
+      "profileId",
+      "customerId",
+    ]) {
       expect(() => parseCustomerProfileUpdate({ firstName: "A", lastName: "B", [field]: "STAFF" })).toThrowError(
         new RegExp(field),
       );

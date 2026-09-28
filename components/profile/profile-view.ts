@@ -14,7 +14,7 @@ export type ResellerStatusView = {
 };
 
 export const resellerStatusLabels: Record<ResellerStatus, ResellerStatusView> = {
-  NONE: {
+  NOT_APPLICABLE: {
     label: "Compte Standard",
     description: "Aucune demande de statut Revendeur n'est enregistrée pour ce compte.",
   },

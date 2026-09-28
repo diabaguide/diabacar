@@ -1,3 +1,15 @@
+// DIABACAR — schéma Prisma aligné sur le corpus canonique.
+//
+// Source de vérité documentaire : `docs/12_Schema_Prisma_final_propose.docx` (schéma Prisma proposé)
+// et `docs/03_Modele_de_donnees_SOURCE.docx` (modèle de données fonctionnel faisant foi).
+// Conventions : snake_case en base via `@map` sur chaque champ, tables nommées au pluriel,
+// UUID (`@db.Uuid`) comme clé technique, `DECIMAL` pour les montants.
+//
+// Périmètre aligné dans cette passe : identité, RBAC, audit, plus le nommage et les enums de
+// toutes les tables existantes. Les structures de catalogue, médias étendus, pricing
+// (`vehicle_prices`, `exchange_rates`, `price_history`), CRM étendu et CMS restent à modéliser
+// au lot catalogue — voir `docs/audit-alignement-corpus-schema.md`.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,31 +20,39 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ---------------------------------------------------------------------------
+// Enums — noms et valeurs du doc 12
+// ---------------------------------------------------------------------------
+
 enum UserType {
   CUSTOMER
   STAFF
 }
 
-enum AccountStatus {
+enum ProfileStatus {
   ACTIVE
   SUSPENDED
+  DISABLED
+}
+
+enum PricingProfile {
+  STANDARD
+  RESELLER
+}
+
+enum CustomerSegment {
+  INDIVIDUAL
+  FLEET
+  GARAGE
+  OTHER
 }
 
 enum ResellerStatus {
-  NONE
+  NOT_APPLICABLE
   PENDING
   APPROVED
   REJECTED
   SUSPENDED
-}
-
-enum VehicleStatus {
-  DRAFT
-  REVIEW
-  PUBLISHED
-  RESERVED
-  SOLD
-  WITHDRAWN
 }
 
 enum VehicleCondition {
@@ -40,19 +60,39 @@ enum VehicleCondition {
   USED
 }
 
-enum VehicleLocation {
+enum LogisticsLocation {
   CHINA
+  IN_TRANSIT
   SENEGAL
+}
+
+enum VehicleCommercialStatus {
+  DRAFT
+  AVAILABLE
+  RESERVED
+  SOLD
+  UNAVAILABLE
+  ARCHIVED
+}
+
+enum DocumentVisibility {
+  PUBLIC
+  PRIVATE
+  SHARE_ON_REQUEST
 }
 
 enum LeadStatus {
   NEW
+  CONTACTED
   QUALIFIED
-  FOLLOW_UP
-  CONVERTED
+  NEGOTIATION
+  ORDER_CONFIRMED
   LOST
+  COMPLETED
 }
 
+// `RequestStatus` n'existe pas dans le doc 12 (écart rédactionnel E28) : il reste porté par
+// `custom_requests`, table dont le remodelage est prévu au lot catalogue (doc 03 §11).
 enum RequestStatus {
   RECEIVED
   QUALIFIED
@@ -63,255 +103,325 @@ enum RequestStatus {
 }
 
 enum OrderStatus {
-  CREATED
   CONFIRMED
   PROCESSING
-  SHIPPING
+  IN_TRANSIT
+  ARRIVED
   DELIVERED
   CANCELLED
 }
 
-enum AssetVisibility {
-  PUBLIC
-  PRIVATE
-}
+// ---------------------------------------------------------------------------
+// Identité et RBAC (doc 03 §3, doc 07, doc 12)
+// ---------------------------------------------------------------------------
 
 model Profile {
-  id String @id @default(uuid()) @db.Uuid
-  authUserId String @unique @map("auth_user_id") @db.Uuid
-  userType UserType
-  status AccountStatus @default(ACTIVE)
-  customer CustomerProfile?
-  staff StaffProfile?
-  audits AuditLog[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String        @id @default(uuid()) @db.Uuid
+  authUserId      String        @unique @map("auth_user_id") @db.Uuid
+  userType        UserType      @map("user_type")
+  status          ProfileStatus @default(ACTIVE)
+  preferredLocale String        @default("fr") @map("preferred_locale")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  customer        CustomerProfile?
+  staff           StaffProfile?
+  audits          AuditLog[]    @relation("AuditActor")
+
   @@map("profiles")
 }
 
 model CustomerProfile {
-  id String @id @default(uuid()) @db.Uuid
-  profileId String @unique @db.Uuid
-  profile Profile @relation(fields: [profileId], references: [id])
-  firstName String
-  lastName String
-  phone String?
-  whatsapp String?
-  city String?
-  country String?
-  resellerStatus ResellerStatus @default(NONE)
-  favorites Favorite[]
-  searches SavedSearch[]
-  leads Lead[]
-  requests CustomRequest[]
-  orders Order[]
+  id             String          @id @default(uuid()) @db.Uuid
+  profileId      String          @unique @map("profile_id") @db.Uuid
+  pricingProfile PricingProfile  @default(STANDARD) @map("pricing_profile")
+  segment        CustomerSegment @default(INDIVIDUAL) @map("customer_segment")
+  resellerStatus ResellerStatus  @default(NOT_APPLICABLE) @map("reseller_status")
+  firstName      String          @map("first_name")
+  lastName       String          @map("last_name")
+  phone          String?
+  whatsapp       String?
+  country        String          @default("SN")
+  city           String?
+  companyName    String?         @map("company_name")
+  businessType   String?         @map("business_type")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  profile        Profile         @relation(fields: [profileId], references: [id])
+  favorites      FavoriteVehicle[]
+  savedSearches  SavedSearch[]
+  leads          Lead[]
+  requests       CustomRequest[]
+  orders         Order[]
+
+  @@index([pricingProfile, resellerStatus])
   @@map("customer_profiles")
 }
 
 model StaffProfile {
-  id String @id @default(uuid()) @db.Uuid
-  profileId String @unique @db.Uuid
-  profile Profile @relation(fields: [profileId], references: [id])
-  roleId String @db.Uuid
-  role Role @relation(fields: [roleId], references: [id])
-  active Boolean @default(true)
+  id            String      @id @default(uuid()) @db.Uuid
+  profileId     String      @unique @map("profile_id") @db.Uuid
+  firstName     String      @map("first_name")
+  lastName      String      @map("last_name")
+  phone         String?
+  jobTitle      String?     @map("job_title")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  profile       Profile     @relation(fields: [profileId], references: [id])
+  roles         StaffRole[]
   assignedLeads Lead[]
+
   @@map("staff_profiles")
 }
 
 model Role {
-  id String @id @default(uuid()) @db.Uuid
-  code String @unique
-  name String
-  staff StaffProfile[]
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  name        String
+  description String?
+  staff       StaffRole[]
   permissions RolePermission[]
+
   @@map("roles")
 }
 
 model Permission {
-  id String @id @default(uuid()) @db.Uuid
-  code String @unique
-  roles RolePermission[]
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  name        String
+  module      String
+  description String?
+  roles       RolePermission[]
+
   @@map("permissions")
 }
 
+model StaffRole {
+  staffId String       @map("staff_id") @db.Uuid
+  roleId  String       @map("role_id") @db.Uuid
+  staff   StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  role    Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, roleId])
+  @@map("staff_roles")
+}
+
 model RolePermission {
-  roleId String @db.Uuid
-  permissionId String @db.Uuid
-  role Role @relation(fields: [roleId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@id([roleId, permissionId])
   @@map("role_permissions")
 }
 
+// ---------------------------------------------------------------------------
+// Référentiel automobile (doc 03 §5) — périmètre actuel : marque et modèle.
+// Générations, finitions, carrosseries, énergies, boîtes, couleurs et
+// caractéristiques administrables restent à modéliser (lot catalogue).
+// ---------------------------------------------------------------------------
+
 model Brand {
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  slug String @unique
-  active Boolean @default(true)
+  id     String         @id @default(uuid()) @db.Uuid
+  name   String
+  slug   String         @unique
+  active Boolean        @default(true)
   models VehicleModel[]
   vehicles Vehicle[]
+
   @@map("brands")
 }
 
 model VehicleModel {
-  id String @id @default(uuid()) @db.Uuid
-  brandId String @db.Uuid
-  brand Brand @relation(fields: [brandId], references: [id])
-  name String
-  slug String
-  active Boolean @default(true)
+  id       String    @id @default(uuid()) @db.Uuid
+  brandId  String    @map("brand_id") @db.Uuid
+  brand    Brand     @relation(fields: [brandId], references: [id])
+  name     String
+  slug     String
+  active   Boolean   @default(true)
   vehicles Vehicle[]
+
   @@unique([brandId, slug])
   @@map("vehicle_models")
 }
 
+// ---------------------------------------------------------------------------
+// Véhicule (doc 03 §6, doc 12) — champs du corpus non encore modélisés :
+// génération, finition, carrosserie, énergie/boîte en FK, puissance, portes,
+// places, couleurs, source, éligibilité import, `archived_at`, `deleted_at`.
+// `publicPrice`/`resellerPrice` sont provisoires : le corpus prescrit la table
+// `vehicle_prices` (base + transport séparés) — décision D10.
+// ---------------------------------------------------------------------------
+
 model Vehicle {
-  id String @id @default(uuid()) @db.Uuid
-  reference String @unique
-  slug String @unique
-  brandId String @db.Uuid
-  modelId String @db.Uuid
-  brand Brand @relation(fields: [brandId], references: [id])
-  model VehicleModel @relation(fields: [modelId], references: [id])
-  title String
-  condition VehicleCondition
-  location VehicleLocation
-  status VehicleStatus @default(DRAFT)
-  year Int
-  mileage Int?
-  fuel String?
-  transmission String?
-  publicPrice Decimal @db.Decimal(14, 2)
-  resellerPrice Decimal? @db.Decimal(14, 2)
-  currency String @default("XOF")
-  publishedAt DateTime?
-  images VehicleImage[]
-  documents VehicleDocument[]
-  favorites Favorite[]
-  leads Lead[]
-  orders Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@index([status, location, publishedAt])
+  id              String                  @id @default(uuid()) @db.Uuid
+  reference       String                  @unique
+  slug            String                  @unique
+  brandId         String                  @map("brand_id") @db.Uuid
+  modelId         String                  @map("model_id") @db.Uuid
+  brand           Brand                   @relation(fields: [brandId], references: [id])
+  model           VehicleModel            @relation(fields: [modelId], references: [id])
+  title           String
+  condition       VehicleCondition
+  location        LogisticsLocation
+  commercialStatus VehicleCommercialStatus @default(DRAFT) @map("commercial_status")
+  isPublished     Boolean                 @default(false) @map("is_published")
+  year            Int
+  mileage         Int?
+  fuel            String?
+  transmission    String?
+  publicPrice     Decimal                 @map("public_price") @db.Decimal(14, 2)
+  resellerPrice   Decimal?                @map("reseller_price") @db.Decimal(14, 2)
+  currency        String                  @default("XOF")
+  publishedAt     DateTime?               @map("published_at")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  media           VehicleMedia[]
+  documents       VehicleDocument[]
+  favorites       FavoriteVehicle[]
+  leads           Lead[]
+  orders          Order[]
+
+  @@index([commercialStatus, location, publishedAt])
   @@index([brandId, modelId, publicPrice])
   @@map("vehicles")
 }
 
-model VehicleImage {
-  id String @id @default(uuid()) @db.Uuid
-  vehicleId String @db.Uuid
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  path String @unique
-  sortOrder Int @default(0)
-  isPrimary Boolean @default(false)
-  visibility AssetVisibility @default(PUBLIC)
+model VehicleMedia {
+  id            String             @id @default(uuid()) @db.Uuid
+  vehicleId     String             @map("vehicle_id") @db.Uuid
+  vehicle       Vehicle            @relation(fields: [vehicleId], references: [id])
+  storagePath   String             @unique @map("storage_path")
+  sortOrder     Int                @default(0) @map("sort_order")
+  isPrimary     Boolean            @default(false) @map("is_primary")
+  visibility    DocumentVisibility @default(PUBLIC)
+
   @@index([vehicleId, sortOrder])
-  @@map("vehicle_images")
+  @@map("vehicle_media")
 }
 
 model VehicleDocument {
-  id String @id @default(uuid()) @db.Uuid
-  vehicleId String @db.Uuid
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  path String @unique
-  kind String
-  visibility AssetVisibility @default(PRIVATE)
+  id           String             @id @default(uuid()) @db.Uuid
+  vehicleId    String             @map("vehicle_id") @db.Uuid
+  vehicle      Vehicle            @relation(fields: [vehicleId], references: [id])
+  storagePath  String             @unique @map("storage_path")
+  documentType String             @map("document_type")
+  visibility   DocumentVisibility @default(PRIVATE)
+
   @@index([vehicleId])
   @@map("vehicle_documents")
 }
 
-model Favorite {
-  id String @id @default(uuid()) @db.Uuid
-  customerId String @db.Uuid
-  vehicleId String @db.Uuid
-  customer CustomerProfile @relation(fields: [customerId], references: [id])
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  createdAt DateTime @default(now())
-  @@unique([customerId, vehicleId])
-  @@map("favorites")
+// ---------------------------------------------------------------------------
+// Activité client (doc 03 §10, §11)
+// ---------------------------------------------------------------------------
+
+model FavoriteVehicle {
+  customerId String          @map("customer_id") @db.Uuid
+  vehicleId  String          @map("vehicle_id") @db.Uuid
+  customer   CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle    Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@id([customerId, vehicleId])
+  @@map("favorite_vehicles")
 }
 
 model SavedSearch {
-  id String @id @default(uuid()) @db.Uuid
-  customerId String @db.Uuid
-  customer CustomerProfile @relation(fields: [customerId], references: [id])
-  name String
-  filtersJson Json
-  createdAt DateTime @default(now())
+  id                   String          @id @default(uuid()) @db.Uuid
+  customerId           String          @map("customer_id") @db.Uuid
+  customer             CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name                 String
+  criteriaJson         Json            @map("criteria_json")
+  notificationsEnabled Boolean         @default(false) @map("notifications_enabled")
+  createdAt            DateTime        @default(now()) @map("created_at")
+
   @@index([customerId])
   @@map("saved_searches")
 }
 
 model Lead {
-  id String @id @default(uuid()) @db.Uuid
-  customerId String? @db.Uuid
-  vehicleId String? @db.Uuid
-  assigneeId String? @db.Uuid
-  customer CustomerProfile? @relation(fields: [customerId], references: [id])
-  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
-  assignee StaffProfile? @relation(fields: [assigneeId], references: [id])
-  contactName String
-  contactPhone String
-  status LeadStatus @default(NEW)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@index([status, assigneeId])
+  id                    String           @id @default(uuid()) @db.Uuid
+  customerId            String?          @map("customer_id") @db.Uuid
+  vehicleId             String?          @map("vehicle_id") @db.Uuid
+  assignedSalespersonId String?          @map("assigned_salesperson_id") @db.Uuid
+  customer              CustomerProfile? @relation(fields: [customerId], references: [id])
+  vehicle               Vehicle?         @relation(fields: [vehicleId], references: [id])
+  assignee              StaffProfile?    @relation(fields: [assignedSalespersonId], references: [id])
+  firstName             String           @map("first_name")
+  phone                 String
+  status                LeadStatus       @default(NEW)
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@index([status, assignedSalespersonId])
   @@map("leads")
 }
 
+// Modèle provisoire : le corpus décrit `custom_vehicle_requests` (doc 03 §11) rattaché au
+// prospect, avec marque/modèle demandés — remodelage prévu au lot catalogue.
 model CustomRequest {
-  id String @id @default(uuid()) @db.Uuid
-  customerId String? @db.Uuid
-  customer CustomerProfile? @relation(fields: [customerId], references: [id])
-  criteriaJson Json
-  budgetMin Decimal? @db.Decimal(14, 2)
-  budgetMax Decimal? @db.Decimal(14, 2)
-  status RequestStatus @default(RECEIVED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String          @id @default(uuid()) @db.Uuid
+  customerId String?         @map("customer_id") @db.Uuid
+  customer   CustomerProfile? @relation(fields: [customerId], references: [id])
+  criteriaJson Json          @map("criteria_json")
+  budgetMin  Decimal?        @map("budget_min") @db.Decimal(14, 2)
+  budgetMax  Decimal?        @map("budget_max") @db.Decimal(14, 2)
+  status     RequestStatus   @default(RECEIVED)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
   @@index([customerId, status])
   @@map("custom_requests")
 }
 
 model Order {
-  id String @id @default(uuid()) @db.Uuid
-  reference String @unique
-  customerId String @db.Uuid
-  vehicleId String? @db.Uuid
-  customer CustomerProfile @relation(fields: [customerId], references: [id])
-  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
-  agreedPrice Decimal @db.Decimal(14, 2)
-  currency String @default("XOF")
-  status OrderStatus @default(CREATED)
-  events OrderEvent[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String           @id @default(uuid()) @db.Uuid
+  reference    String           @unique
+  customerId   String           @map("customer_id") @db.Uuid
+  vehicleId    String?          @map("vehicle_id") @db.Uuid
+  customer     CustomerProfile  @relation(fields: [customerId], references: [id])
+  vehicle      Vehicle?         @relation(fields: [vehicleId], references: [id])
+  agreedPrice  Decimal          @map("agreed_price") @db.Decimal(14, 2)
+  currency     String           @default("XOF")
+  status       OrderStatus      @default(CONFIRMED)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  events       OrderEvent[]
+
   @@index([customerId, status])
   @@map("orders")
 }
 
 model OrderEvent {
-  id String @id @default(uuid()) @db.Uuid
-  orderId String @db.Uuid
-  order Order @relation(fields: [orderId], references: [id])
-  status OrderStatus
-  note String?
-  occurredAt DateTime @default(now())
+  id         String      @id @default(uuid()) @db.Uuid
+  orderId    String      @map("order_id") @db.Uuid
+  order      Order       @relation(fields: [orderId], references: [id])
+  status     OrderStatus
+  note       String?
+  occurredAt DateTime    @default(now()) @map("occurred_at")
+
   @@index([orderId, occurredAt])
   @@map("order_events")
 }
 
+// ---------------------------------------------------------------------------
+// Audit (doc 12, doc 17 §8) — append-only, immuable pour les utilisateurs.
+// ---------------------------------------------------------------------------
+
 model AuditLog {
-  id String @id @default(uuid()) @db.Uuid
-  actorProfileId String? @db.Uuid
-  actor Profile? @relation(fields: [actorProfileId], references: [id])
-  action String
-  entity String
-  entityId String
-  beforeJson Json?
-  afterJson Json?
-  occurredAt DateTime @default(now())
-  @@index([entity, entityId, occurredAt])
+  id            String   @id @default(uuid()) @db.Uuid
+  actorProfileId String? @map("actor_profile_id") @db.Uuid
+  actor         Profile? @relation("AuditActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+  action        String
+  entityType    String   @map("entity_type")
+  entityId      String?  @map("entity_id")
+  oldValues     Json?    @map("old_values")
+  newValues     Json?    @map("new_values")
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
   @@map("audit_logs")
 }

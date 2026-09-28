@@ -13,7 +13,7 @@ import type { Actor } from "@/services/identity.service";
 import type { ResellerStatus } from "@/services/pricing.service";
 
 const visitor: Actor = { kind: "visitor" };
-const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NONE" };
+const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NOT_APPLICABLE" };
 const suspended: Actor = { kind: "suspended", profileId: "p1", userType: "CUSTOMER" };
 const staff: Actor = {
   kind: "staff",
@@ -21,11 +21,12 @@ const staff: Actor = {
   staffId: "s1",
   status: "ACTIVE",
   active: true,
-  roleCode: "ADMIN",
+  roles: [{ code: "ADMIN", permissions: [] }],
+  roleCodes: ["ADMIN"],
   permissions: [],
 };
 
-const allStatuses: ResellerStatus[] = ["NONE", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"];
+const allStatuses: ResellerStatus[] = ["NOT_APPLICABLE", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"];
 
 describe("reseller status labels", () => {
   it("covers every documented status with a distinct readable label", () => {

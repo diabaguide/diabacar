@@ -9,7 +9,7 @@ import {
 import type { Actor } from "@/services/identity.service";
 
 const visitor: Actor = { kind: "visitor" };
-const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NONE" };
+const customer: Actor = { kind: "customer", profileId: "p1", customerId: "c1", status: "ACTIVE", resellerStatus: "NOT_APPLICABLE" };
 const suspended: Actor = { kind: "suspended", profileId: "p2", userType: "CUSTOMER" };
 const commercial: Actor = {
   kind: "staff",
@@ -17,7 +17,8 @@ const commercial: Actor = {
   staffId: "s9",
   status: "ACTIVE",
   active: true,
-  roleCode: "COMMERCIAL",
+  roles: [{ code: "COMMERCIAL", permissions: ["order.view", "lead.view"] }],
+  roleCodes: ["COMMERCIAL"],
   permissions: ["order.view", "lead.view"],
 };
 const admin: Actor = {
@@ -26,7 +27,8 @@ const admin: Actor = {
   staffId: "s0",
   status: "ACTIVE",
   active: true,
-  roleCode: "ADMIN",
+  roles: [{ code: "ADMIN", permissions: ["role.manage", "audit.view", "storage.private_read"] }],
+  roleCodes: ["ADMIN"],
   permissions: ["role.manage", "audit.view", "storage.private_read"],
 };
 

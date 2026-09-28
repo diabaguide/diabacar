@@ -18,11 +18,21 @@ const staffRow: ProfileRow = {
   customer: null,
   staff: {
     id: "staff-1",
-    active: true,
-    role: {
-      code: "ADMIN",
-      permissions: [{ permission: { code: "audit.view" } }, { permission: { code: "role.manage" } }],
-    },
+    // Deux rôles (relation N:N `staff_roles`), avec une permission partagée pour éprouver la déduplication.
+    roles: [
+      {
+        role: {
+          code: "COMMERCIAL",
+          permissions: [{ permission: { code: "order.view" } }, { permission: { code: "audit.view" } }],
+        },
+      },
+      {
+        role: {
+          code: "ADMIN",
+          permissions: [{ permission: { code: "role.manage" } }, { permission: { code: "audit.view" } }],
+        },
+      },
+    ],
   },
 };
 
@@ -38,15 +48,20 @@ describe("toProfileRecord", () => {
     });
   });
 
-  it("flattens the role permissions of a staff profile", () => {
+  it("flattens the N:N roles of a staff profile and deduplicates the permissions union", () => {
     const record = toProfileRecord(staffRow);
 
-    expect(record.staff?.roleCode).toBe("ADMIN");
-    expect(record.staff?.permissions).toEqual(["audit.view", "role.manage"]);
+    expect(record.staff?.roles).toEqual([
+      { code: "ADMIN", permissions: ["audit.view", "role.manage"] },
+      { code: "COMMERCIAL", permissions: ["audit.view", "order.view"] },
+    ]);
+    // Union dédupliquée et triée : `audit.view` n'apparaît qu'une fois.
+    expect(record.staff?.permissions).toEqual(["audit.view", "order.view", "role.manage"]);
   });
 
-  it("keeps an inactive staff member inactive so the actor stays downgraded", () => {
-    const record = toProfileRecord({ ...staffRow, staff: { ...staffRow.staff!, active: false } });
-    expect(record.staff?.active).toBe(false);
+  it("keeps a non-ACTIVE staff status so the actor stays downgraded by the service", () => {
+    const record = toProfileRecord({ ...staffRow, status: "DISABLED" });
+    expect(record.status).toBe("DISABLED");
+    expect(record.staff?.roles).toHaveLength(2);
   });
 });

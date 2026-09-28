@@ -18,29 +18,29 @@ describe("audit service", () => {
       buildAuditEntry({
         actorProfileId: "p1",
         action: "customer.profile.update" as never,
-        entity: "customer_profiles",
+        entityType: "customer_profiles",
         entityId: "c1",
       }),
     ).toThrowError(/unknown audit action/i);
   });
 
-  it("requires actor, entity, entity id and a UTC timestamp", () => {
+  it("requires an actor, an entity type and a UTC timestamp; keeps the renamed canonical fields", () => {
     const entry = buildAuditEntry({
       actorProfileId: "profile-1",
       action: "vehicle.publish",
-      entity: "vehicles",
+      entityType: "vehicles",
       entityId: "vehicle-1",
-      before: { status: "REVIEW" },
-      after: { status: "PUBLISHED" },
+      oldValues: { commercialStatus: "DRAFT" },
+      newValues: { commercialStatus: "AVAILABLE" },
     });
 
     expect(entry.actorProfileId).toBe("profile-1");
-    expect(entry.entity).toBe("vehicles");
+    expect(entry.entityType).toBe("vehicles");
     expect(entry.entityId).toBe("vehicle-1");
-    expect(entry.beforeJson).toEqual({ status: "REVIEW" });
-    expect(entry.afterJson).toEqual({ status: "PUBLISHED" });
-    expect(entry.occurredAt instanceof Date).toBe(true);
-    expect(Number.isNaN(entry.occurredAt.getTime())).toBe(false);
+    expect(entry.oldValues).toEqual({ commercialStatus: "DRAFT" });
+    expect(entry.newValues).toEqual({ commercialStatus: "AVAILABLE" });
+    expect(entry.createdAt instanceof Date).toBe(true);
+    expect(Number.isNaN(entry.createdAt.getTime())).toBe(false);
   });
 
   it("requires a reason for the sensitive transitions described by the workflows", () => {
@@ -50,29 +50,46 @@ describe("audit service", () => {
       buildAuditEntry({
         actorProfileId: "admin-1",
         action: "reseller.status.change",
-        entity: "customer_profiles",
+        entityType: "customer_profiles",
         entityId: "customer-1",
-        before: { resellerStatus: "PENDING" },
-        after: { resellerStatus: "APPROVED" },
+        oldValues: { resellerStatus: "PENDING" },
+        newValues: { resellerStatus: "APPROVED" },
       }),
     ).toThrowError(/reason/i);
 
     const entry = buildAuditEntry({
       actorProfileId: "admin-1",
       action: "reseller.status.change",
-      entity: "customer_profiles",
+      entityType: "customer_profiles",
       entityId: "customer-1",
-      before: { resellerStatus: "PENDING" },
-      after: { resellerStatus: "APPROVED" },
+      oldValues: { resellerStatus: "PENDING" },
+      newValues: { resellerStatus: "APPROVED" },
       reason: "Dossier complet.",
     });
     expect(entry.reason).toBe("Dossier complet.");
   });
 
-  it("rejects an empty entity id and a missing actor for authenticated actions", () => {
+  it("rejects a missing entity type", () => {
     expect(() =>
-      buildAuditEntry({ actorProfileId: "p1", action: "vehicle.publish", entity: "vehicles", entityId: "  " }),
-    ).toThrowError(/entity id/i);
+      buildAuditEntry({ actorProfileId: "p1", action: "vehicle.publish", entityType: "  ", entityId: "vehicle-1" }),
+    ).toThrowError(/entity type/i);
+  });
+
+  it("no longer requires an entity id: an unnamed entity is accepted and normalised to null", () => {
+    const withoutId = buildAuditEntry({
+      actorProfileId: "p1",
+      action: "vehicle.publish",
+      entityType: "vehicles",
+    });
+    expect(withoutId.entityId).toBeNull();
+
+    const blankId = buildAuditEntry({
+      actorProfileId: "p1",
+      action: "vehicle.publish",
+      entityType: "vehicles",
+      entityId: "   ",
+    });
+    expect(blankId.entityId).toBeNull();
   });
 
   it("never stores secrets or full phone numbers in the audit payload", () => {
@@ -82,7 +99,7 @@ describe("audit service", () => {
       authorization: "Bearer abc",
       phone: "+221771234567",
       contactPhone: "+221771234567",
-      nested: { apiKey: "k", token: "t", city: "Dakar" },
+      nested: { apiKey: "secret-api-key", token: "t0ken", city: "Dakar" },
     }) as Record<string, unknown>;
 
     expect(payload.password).toBe("[REDACTED]");
@@ -103,7 +120,7 @@ describe("audit service", () => {
     const entry = buildAuditEntry({
       actorProfileId: "p1",
       action: "settings.change",
-      entity: "settings",
+      entityType: "settings",
       entityId: "whatsapp",
     });
     expect(Object.isFrozen(entry)).toBe(true);

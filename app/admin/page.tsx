@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Back-office DIABACAR",
   description: "Accès réservé au personnel habilité.",
-  // Doc 13 — le back-office est exclu de l'indexation.
+  // Doc 18 — le back-office est exclu de l'indexation.
   robots: { index: false, follow: false, nocache: true },
 };
 
@@ -31,12 +31,12 @@ export default async function AdminPage() {
   const actor = await getCurrentActor();
   const authenticated = actor.kind !== "visitor";
 
-  let roleCode: string | null = null;
+  let roleCodes: string[] = [];
   let denial: { code: string; message: string } | null = null;
 
   try {
     const staff = requireStaff(actor, "vehicle.view");
-    roleCode = staff.roleCode;
+    roleCodes = staff.roleCodes;
   } catch (error) {
     denial = toErrorResponse(error).error;
   }
@@ -53,7 +53,7 @@ export default async function AdminPage() {
 
       <div className="mt-8">
         {denial ? <AccessDenied code={denial.code} message={denial.message} /> : null}
-        {roleCode ? <BackOfficePlaceholder roleCode={roleCode} /> : null}
+        {roleCodes.length > 0 ? <BackOfficePlaceholder roleCodes={roleCodes} /> : null}
       </div>
     </main>
   );
@@ -91,13 +91,13 @@ function AccessDenied({ code, message }: { code: string; message: string }) {
 }
 
 /** État d'attente explicite : les écrans de gestion ne sont pas encore livrés (lot 2). */
-function BackOfficePlaceholder({ roleCode }: { roleCode: string }) {
+function BackOfficePlaceholder({ roleCodes }: { roleCodes: string[] }) {
   return (
     <section aria-labelledby="back-office-attente" className="rounded-xl border border-[#b8ddff] bg-[#e8f4ff] p-5">
       <h2 id="back-office-attente" className="text-lg font-semibold text-[#0354A3]">
         Accès au back-office confirmé
       </h2>
-      <p className="mt-2 text-sm text-[#0354A3]">Rôle : {roleCode}</p>
+      <p className="mt-2 text-sm text-[#0354A3]">Rôles : {roleCodes.join(", ")}</p>
       <p className="mt-2 text-sm text-[#0354A3]">
         Les écrans de gestion (véhicules, clients, prospects, commandes, personnel, contenus, audit)
         arrivent aux lots suivants. Aucune fonctionnalité de gestion n&apos;est disponible à ce stade.
