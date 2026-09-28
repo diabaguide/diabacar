@@ -28,3 +28,7 @@ coverage/
 
 # local tooling
 .vercel/
+
+# Archive source zippée (contenu déjà décompressé dans ce dossier)
+DIABACAR_Documentation_Complete_21_Documents.zip
+.backup/
