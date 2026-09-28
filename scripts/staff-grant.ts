@@ -2,7 +2,7 @@
 /**
  * `npm run staff:grant -- --email <adresse> --role ADMIN|COMMERCIAL`
  *
- * Amorçage du premier compte STAFF/ADMIN (doc 08 §« Seeds » : « Compte administrateur initial créé via
+ * Amorçage du premier compte STAFF/ADMIN (doc 13 §« Seeds » : « Compte administrateur initial créé via
  * Supabase Auth hors dépôt ; lier son auth_user_id au profil STAFF puis attribuer ADMIN. Aucun mot de
  * passe de seed. »). Procédure documentée par la décision D04 de `docs/decisions.md`.
  *
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
       const profile = await tx.profile.upsert({
         where: { authUserId },
         // Le profil est rattaché à l'utilisateur Auth existant. Le statut du compte n'est pas forcé :
-        // une réactivation/ suspension reste un acte distinct (doc 02, audit des statuts).
+        // une réactivation/ suspension reste un acte distinct (doc 07, audit des statuts).
         update: { userType: "STAFF" },
         create: { authUserId, userType: "STAFF" },
       });

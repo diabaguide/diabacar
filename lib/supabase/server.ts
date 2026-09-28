@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 /**
  * Client Supabase côté serveur (cookies de session via `next/headers`).
  * Supabase Auth est la seule source d'identité : aucun mot de passe n'est stocké dans les tables métier
- * (doc 06_Supabase_Auth_RLS_Storage).
+ * (docs/11_Specifications_Supabase_Auth_RLS_Storage.docx).
  */
 export async function createSupabaseServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

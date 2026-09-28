@@ -71,7 +71,7 @@ export function isProductionEnvironment(env: Pick<ServerEnv, "APP_ENV">): boolea
 }
 
 /**
- * Garde-fou exigé par les documents 08/11 et dev.md §10 : aucune migration ni écriture ne doit viser
+ * Garde-fou exigé par les documents 13 / 16 et dev.md §10 : aucune migration ni écriture ne doit viser
  * la base de production sans autorisation explicite.
  */
 export function assertProductionDatabaseAllowed(env: ServerEnv): void {

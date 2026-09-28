@@ -4,7 +4,7 @@
  * Formulaire de demande de récupération de compte.
  *
  * Le serveur renvoie toujours le même message, que l'adresse corresponde à un compte ou non : ce
- * formulaire ne permet donc pas de découvrir quelles adresses sont enregistrées (doc 12).
+ * formulaire ne permet donc pas de découvrir quelles adresses sont enregistrées (doc 17).
  */
 
 import Link from "next/link";

@@ -3,7 +3,7 @@ import { hasPermission, type PermissionCode } from "@/services/permissions.servi
 import { toPermissionActor, type Actor } from "@/services/identity.service";
 
 /**
- * Gardes d'accès serveur — ordre imposé par dev.md §6 et le doc 05 :
+ * Gardes d'accès serveur — ordre imposé par dev.md §6 et le doc 10 :
  * 1) session, 2) statut du compte, 3) permission, 4) portée et propriété.
  * La validation des entrées (5) et l'exécution + audit (6) restent aux appelants.
  *
@@ -48,7 +48,7 @@ export function requireStaff(actor: Actor, permission: PermissionCode): Extract<
 /**
  * Contrôle de propriété d'une ressource privée.
  * Un acteur non propriétaire reçoit NOT_FOUND — jamais FORBIDDEN — pour ne pas révéler
- * l'existence d'une ressource privée (doc 02, critères de recette).
+ * l'existence d'une ressource privée (doc 07, critères de recette).
  */
 export function assertOwnership(actor: Actor, resource: { customerId: string }): void {
   const authenticated = requireAuthenticated(actor);

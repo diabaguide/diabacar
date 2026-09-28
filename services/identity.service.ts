@@ -3,7 +3,7 @@ import type { PricingActor, ResellerStatus } from "@/services/pricing.service";
 import { AppError } from "@/lib/errors";
 
 /**
- * Identités, profils métier et statuts (doc 06_Supabase_Auth_RLS_Storage).
+ * Identités, profils métier et statuts (docs/11_Specifications_Supabase_Auth_RLS_Storage.docx).
  *
  * Supabase Auth reste la seule source d'identité : aucune table métier ne duplique le mot de passe.
  * Ce service relie une identité Auth à son profil métier de façon **idempotente** et ne dérive

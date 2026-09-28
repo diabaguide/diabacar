@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { privateRoutes } from "@/lib/routes";
 
 /**
- * Rafraîchissement de session et protection des routes privées (doc 12 : « sessions Supabase vérifiées
+ * Rafraîchissement de session et protection des routes privées (doc 17 : « sessions Supabase vérifiées
  * côté serveur ; cookies et redirections configurés de façon sûre »).
  *
  * Une protection de route ne suffit PAS pour les Server Actions et les API : les gardes serveur

@@ -6,9 +6,9 @@ import type { Actor } from "@/services/identity.service";
 /**
  * Profil client (My DIABACAR).
  *
- * Seuls les « champs personnels autorisés » sont acceptés (doc 06). Les champs privilégiés
+ * Seuls les « champs personnels autorisés » sont acceptés (doc 11). Les champs privilégiés
  * (`userType`, statut de compte, `resellerStatus`, `roleId`, `active`) et tout champ inconnu sont
- * rejetés : un utilisateur ne peut pas se déclarer STAFF, ADMIN ou Revendeur approuvé (doc 06, dev.md §5-6).
+ * rejetés : un utilisateur ne peut pas se déclarer STAFF, ADMIN ou Revendeur approuvé (doc 11, dev.md §5-6).
  */
 export const customerProfileUpdateSchema = z
   .object({

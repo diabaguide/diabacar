@@ -7,7 +7,7 @@ import type { IdentityRepository, ProfileRecord } from "@/services/identity.serv
  * l'acteur. Éviter de sérialiser un modèle Prisma complet »).
  *
  * Cette connexion est privilégiée côté serveur et peut contourner RLS : les contrôles de permission et
- * de propriété restent obligatoires dans les services (doc 06).
+ * de propriété restent obligatoires dans les services (doc 11).
  */
 const profileSelect = {
   id: true,
@@ -70,7 +70,7 @@ export function createIdentityRepository(): IdentityRepository {
 
     /**
      * Idempotent : l'unicité `profiles.auth_user_id` et l'`upsert` garantissent l'absence de doublon
-     * même en cas d'appels concurrents (doc 06 : « création fiable et idempotente »).
+     * même en cas d'appels concurrents (doc 11 : « création fiable et idempotente »).
      * Le domaine privilégié n'est jamais fourni par l'appelant : toujours CUSTOMER / ACTIVE ici.
      */
     async createCustomerProfile(input: { authUserId: string; firstName: string; lastName: string }) {

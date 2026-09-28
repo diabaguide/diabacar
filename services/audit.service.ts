@@ -1,9 +1,9 @@
 import { AppError } from "@/lib/errors";
 
 /**
- * Journal d'audit append-only (doc 07_Schema_Prisma_de_Reference : `AuditLog` « append only » ;
- * doc 12_Cahier_Securite : audit append-only pour prix, publication, réservation, vente,
- * approbation Revendeur, rôles et paramètres ; doc 04_Workflows_et_Etats : toute transition sensible
+ * Journal d'audit append-only (docs/12_Schema_Prisma_final_propose.docx : `AuditLog` « append only » ;
+ * docs/17_Cahier_securite.docx : audit append-only pour prix, publication, réservation, vente,
+ * approbation Revendeur, rôles et paramètres ; docs/09_Workflows_machines_a_etats.docx : toute transition sensible
  * enregistre acteur, date UTC, ancien état, nouvel état et motif).
  *
  * Ce service ne construit que des entrées immuables : aucune fonction de modification ou de suppression
@@ -27,7 +27,7 @@ export const AUDITED_ACTIONS = [
 
 export type AuditAction = (typeof AUDITED_ACTIONS)[number];
 
-/** Transitions sensibles exigeant un motif explicite (doc 04). */
+/** Transitions sensibles exigeant un motif explicite (doc 09). */
 export const sensitiveTransitionsRequiringReason: readonly AuditAction[] = [
   "account.status.change",
   "reseller.status.change",
@@ -73,7 +73,7 @@ export function maskPhone(value: string): string {
   return `${prefix}${digits.slice(0, 4)}****${digits.slice(-3)}`;
 }
 
-/** Retire des données d'audit tout secret et masque les numéros complets (doc 12). */
+/** Retire des données d'audit tout secret et masque les numéros complets (doc 17). */
 export function sanitizeAuditPayload(value: unknown, depth = 0): unknown {
   if (value === null || value === undefined) {
     return value ?? null;

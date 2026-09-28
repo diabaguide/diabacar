@@ -1,8 +1,8 @@
 /**
  * Seed idempotent DIABACAR — rôles ADMIN et COMMERCIAL, 26 permissions officielles et associations.
  *
- * Cadre : `docs/08_Migrations_et_Seeds.docx` §« Seeds » (« Seed idempotent des codes de rôles ADMIN et
- * COMMERCIAL, des permissions et de leurs associations minimales ») et `docs/02_Roles_et_Permissions.docx`.
+ * Cadre : `docs/13_Plan_migrations_et_seeds.docx` §« Seeds » (« Seed idempotent des codes de rôles ADMIN et
+ * COMMERCIAL, des permissions et de leurs associations minimales ») et `docs/07_Roles_et_permissions.docx`.
  * Répartition provisoire : décision D01 de `docs/decisions.md` (matrice dans `prisma/seed-data.ts`).
  *
  * Garanties :

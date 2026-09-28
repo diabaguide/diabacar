@@ -2,7 +2,7 @@
 -- DIABACAR - M05 : liaison auth.users, RLS, policies et buckets Storage
 -- SQL entièrement manuel : ces objets ne sont pas exprimables par Prisma (T01).
 --
--- Principes retenus (décisions T03/T05, docs 06 et 12) :
+-- Principes retenus (décisions T03/T05, docs 11 et 12) :
 --   * RLS activée sur TOUTES les tables exposées du schéma « public ».
 --     Aucune policy n'est créée par défaut : « aucune policy » = aucun accès
 --     pour anon et authenticated (refus par défaut).
@@ -79,7 +79,7 @@ GRANT EXECUTE ON FUNCTION public.current_is_admin() TO anon, authenticated;
 -- Création idempotente du profil métier à l'inscription.
 -- IMPORTANT : user_type et status sont FIXÉS par cette fonction ('CUSTOMER',
 -- 'ACTIVE') et ne sont JAMAIS lus depuis raw_user_meta_data, qui est éditable
--- par l'utilisateur (doc 06, dev.md §6). L'attribution STAFF/ADMIN est un acte
+-- par l'utilisateur (doc 11, dev.md §6). L'attribution STAFF/ADMIN est un acte
 -- serveur séparé (commande d'amorçage, décision D04).
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
@@ -270,7 +270,7 @@ CREATE POLICY saved_searches_delete_own ON public.saved_searches
 -- ----------------------------------------------------------------------------
 -- 8. Prospects, commandes et demandes : LECTURE de ses propres lignes uniquement.
 --    Aucune policy INSERT/UPDATE/DELETE client : l'écriture passe par le serveur
---    (enveloppe de service, doc 05 / dev.md §6).
+--    (enveloppe de service, doc 10 / dev.md §6).
 -- ----------------------------------------------------------------------------
 GRANT SELECT ON public.leads           TO authenticated;
 GRANT SELECT ON public.orders          TO authenticated;
@@ -293,7 +293,7 @@ CREATE POLICY custom_requests_select_own ON public.custom_requests
 -- par le serveur, qui émet des URL signées de courte durée (décision T09).
 
 -- ----------------------------------------------------------------------------
--- 9. Buckets Storage (doc 06, doc 08 M05)
+-- 9. Buckets Storage (doc 11, doc 13 M05)
 -- ----------------------------------------------------------------------------
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES

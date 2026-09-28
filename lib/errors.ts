@@ -1,5 +1,5 @@
 /**
- * Codes d'erreur fonctionnels imposés par le contrat transversal (doc 05_API_et_Services_Backend).
+ * Codes d'erreur fonctionnels imposés par le contrat transversal (docs/10_Specifications_API_Server_Actions_Backend.docx).
  * `INTERNAL` n'est pas un code fonctionnel documenté : il n'est utilisé que pour les défaillances
  * inattendues, dont le détail reste côté serveur (jamais exposé au client).
  */

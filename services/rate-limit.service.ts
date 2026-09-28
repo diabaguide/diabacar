@@ -1,5 +1,5 @@
 /**
- * Limitation de fréquence (doc 12_Cahier_Securite : « limitation de fréquence sur authentification,
+ * Limitation de fréquence (docs/17_Cahier_securite.docx : « limitation de fréquence sur authentification,
  * inscription, récupération, demande et endpoints sensibles »).
  *
  * Les documents ne chiffrent AUCUN seuil : les valeurs par défaut ci-dessous sont donc des paramètres

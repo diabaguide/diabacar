@@ -3,7 +3,7 @@
  * (`prisma db seed`, `npm run staff:grant`, outils de migration).
  *
  * Exigences :
- * - doc 08 §« Procédure de livraison » : ne jamais viser la production par accident ;
+ * - doc 13 §« Procédure de livraison » : ne jamais viser la production par accident ;
  * - docs/decisions.md E25 : `APP_ENV` et `ALLOW_PRODUCTION_DATABASE` doivent être réellement
  *   exploités par le code, pas seulement déclarés dans `.env.example`.
  *
@@ -60,7 +60,7 @@ export function assertNonProductionDatabase(context: string): void {
   if (appEnv === "production" && !allowProduction) {
     throw new Error(
       `Refus d'exécuter ${context} : APP_ENV=production et ALLOW_PRODUCTION_DATABASE != "true". ` +
-        `Définir explicitement ALLOW_PRODUCTION_DATABASE="true" pour confirmer (doc 08, décision E25).`,
+        `Définir explicitement ALLOW_PRODUCTION_DATABASE="true" pour confirmer (doc 13, décision E25).`,
     );
   }
 }
