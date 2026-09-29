@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminHeader } from "@/components/admin/AdminHeader";
 import { LogoutButton } from "@/components/profile/LogoutButton";
+import { logoutAction } from "@/app/my-diabacar/actions";
+import { createAdminMetadata } from "@/app/admin/guard";
 import { getCurrentActor } from "@/lib/auth/session";
 import { toErrorResponse } from "@/lib/errors";
 import { requireStaff } from "@/services/access.service";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import type { PermissionCode } from "@/services/permissions.service";
 
 /**
- * Back-office DIABACAR — état d'attente du lot 2.
+ * Back-office DIABACAR — accueil du lot L2.
  *
  * L'accès exige `requireStaff(actor, "vehicle.view")` : session vérifiée, statut de compte actif,
  * puis permission. La permission d'entrée est la plus faible du portail opérationnel : elle est
@@ -16,91 +20,87 @@ import { logoutAction } from "@/app/my-diabacar/actions";
  * Un visiteur, un client ou un membre du personnel sans cette permission reçoit un refus neutre,
  * sans aucune donnée.
  *
- * Aucun écran de gestion n'est implémenté ici : les fonctionnalités arrivent aux lots suivants.
+ * Chaque écran livré n'est proposé que si l'acteur porte la permission correspondante ; le lien
+ * n'est qu'une aide, la page cible appliquant sa propre garde.
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Back-office DIABACAR",
-  description: "Accès réservé au personnel habilité.",
-  // Doc 18 — le back-office est exclu de l'indexation.
-  robots: { index: false, follow: false, nocache: true },
-};
+export const metadata: Metadata = createAdminMetadata(
+  "Back-office DIABACAR",
+  "Accès réservé au personnel habilité.",
+);
 
 export default async function AdminPage() {
   const actor = await getCurrentActor();
   const authenticated = actor.kind !== "visitor";
 
-  let roleCodes: string[] = [];
+  let permissions: PermissionCode[] = [];
   let denial: { code: string; message: string } | null = null;
 
   try {
     const staff = requireStaff(actor, "vehicle.view");
-    roleCodes = staff.roleCodes;
+    permissions = staff.permissions;
   } catch (error) {
     denial = toErrorResponse(error).error;
   }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#011D4F]">Back-office DIABACAR</h1>
-          <p className="mt-2 text-slate-600">Accès réservé au personnel habilité.</p>
-        </div>
-        {authenticated ? <LogoutButton action={logoutAction} /> : null}
-      </div>
+      <AdminHeader
+        permissions={permissions}
+        title="Back-office DIABACAR"
+        subtitle="Accès réservé au personnel habilité."
+        logout={authenticated ? <LogoutButton action={logoutAction} /> : undefined}
+      />
 
-      <div className="mt-8">
-        {denial ? <AccessDenied code={denial.code} message={denial.message} /> : null}
-        {roleCodes.length > 0 ? <BackOfficePlaceholder roleCodes={roleCodes} /> : null}
+      <div className="mt-8 grid gap-6">
+        {denial ? <AdminAccessDenied code={denial.code} message={denial.message} /> : null}
+        {permissions.length > 0 ? <AdminScreens permissions={permissions} /> : null}
       </div>
     </main>
   );
 }
 
-/**
- * Refus d'accès. Le message provient de l'enveloppe normalisée (`lib/errors.ts`) et ne révèle ni
- * ressource privée, ni identifiant, ni détail interne.
- */
-function AccessDenied({ code, message }: { code: string; message: string }) {
-  return (
-    <section role="alert" className="rounded-xl border border-[#f3cfcb] bg-[#fdf1f1] p-5">
-      <h2 className="text-lg font-semibold text-[#95312a]">
-        {code === "UNAUTHENTICATED" ? "Connexion requise" : "Accès refusé"}
-      </h2>
-      <p className="mt-2 text-sm text-[#95312a]">{message}</p>
-      <p className="mt-2 text-sm text-[#95312a]">
-        Aucune donnée du back-office n&apos;est affichée pour ce compte.
-      </p>
-      <div className="mt-4 flex flex-wrap gap-4">
-        {code === "UNAUTHENTICATED" ? (
-          <Link
-            href="/connexion?suivant=%2Fadmin"
-            className="rounded-lg bg-[#0063DF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0354A3]"
-          >
-            Se connecter
-          </Link>
-        ) : null}
-        <Link href="/" className="text-sm font-semibold text-[#0063DF] hover:text-[#0354A3]">
-          Retour au site public
-        </Link>
-      </div>
-    </section>
-  );
-}
+/** Écrans livrés par le lot L2, chacun conditionné à la permission qu'exige sa garde serveur. */
+function AdminScreens({ permissions }: { permissions: readonly PermissionCode[] }) {
+  const screens = [
+    {
+      href: "/admin/vehicules",
+      title: "Véhicules",
+      description:
+        "Recherche, création, publication, statut commercial, médias et prix ; fiche d'aperçu incluse.",
+      allowed: permissions.includes("vehicle.view"),
+    },
+    {
+      href: "/admin/referentiels",
+      title: "Référentiels",
+      description: "Marques, modèles, carrosseries, énergies, boîtes, couleurs, équipements et caractéristiques.",
+      allowed: permissions.includes("content.manage"),
+    },
+  ].filter((screen) => screen.allowed);
 
-/** État d'attente explicite : les écrans de gestion ne sont pas encore livrés (lot 2). */
-function BackOfficePlaceholder({ roleCodes }: { roleCodes: string[] }) {
   return (
-    <section aria-labelledby="back-office-attente" className="rounded-xl border border-[#b8ddff] bg-[#e8f4ff] p-5">
-      <h2 id="back-office-attente" className="text-lg font-semibold text-[#0354A3]">
-        Accès au back-office confirmé
+    <section aria-labelledby="back-office-ecrans" className="grid gap-4">
+      <h2 id="back-office-ecrans" className="text-lg font-semibold text-[#011D4F]">
+        Gestion livrée
       </h2>
-      <p className="mt-2 text-sm text-[#0354A3]">Rôles : {roleCodes.join(", ")}</p>
-      <p className="mt-2 text-sm text-[#0354A3]">
-        Les écrans de gestion (véhicules, clients, prospects, commandes, personnel, contenus, audit)
-        arrivent aux lots suivants. Aucune fonctionnalité de gestion n&apos;est disponible à ce stade.
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {screens.map((screen) => (
+          <li key={screen.href} className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="text-base font-semibold text-[#011D4F]">{screen.title}</h3>
+            <p className="mt-2 text-sm text-slate-600">{screen.description}</p>
+            <Link
+              href={screen.href}
+              className="mt-4 inline-block text-sm font-semibold text-[#0063DF] hover:text-[#0354A3]"
+            >
+              Ouvrir
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-slate-600">
+        Les autres écrans du portail opérationnel (clients, prospects, commandes, personnel, audit) arrivent aux lots
+        suivants.
       </p>
     </section>
   );

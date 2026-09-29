@@ -144,6 +144,50 @@ export interface RolePermissionRow {
   readonly permissionCode: PermissionCodeFromSeed;
 }
 
+/** Une valeur de référentiel amorçable : code canonique + libellé français. */
+export interface ReferentialSeedRow {
+  readonly code: string;
+  readonly name: string;
+}
+
+/**
+ * Référentiels explicitement nommés par le doc 13 §« Seeds obligatoires » (qui reprend le doc 03 §5).
+ *
+ * - codes canoniques : ESSENCE/DIESEL/HYBRID/PHEV/ELECTRIC, SEDAN/HATCHBACK/SUV/PICKUP/MINIBUS/VAN/
+ *   TRUCK/UTILITY, AUTOMATIC/MANUAL/CVT/DCT ;
+ * - libellés français issus des exemples du doc 03 §5 (« Berline, SUV, pick-up, minibus,
+ *   camion/utilitaire », « Essence, diesel, hybrid, PHEV, electric », « Automatique, manuelle, CVT,
+ *   DCT ») ;
+ * - AUCUNE marque ni modèle : D14 (liste non fournie par l'exploitant) ;
+ * - AUCUNE couleur : le doc 03 §5 décrit `name, hex_code, scope` mais ne nomme aucune valeur, et
+ *   rien ne doit être inventé (écart signalé au coordinateur).
+ */
+export const BODY_TYPE_SEEDS: readonly ReferentialSeedRow[] = [
+  { code: "SEDAN", name: "Berline" },
+  { code: "HATCHBACK", name: "Compacte" },
+  { code: "SUV", name: "SUV" },
+  { code: "PICKUP", name: "Pick-up" },
+  { code: "MINIBUS", name: "Minibus" },
+  { code: "VAN", name: "Fourgon" },
+  { code: "TRUCK", name: "Camion" },
+  { code: "UTILITY", name: "Utilitaire" },
+];
+
+export const FUEL_TYPE_SEEDS: readonly ReferentialSeedRow[] = [
+  { code: "ESSENCE", name: "Essence" },
+  { code: "DIESEL", name: "Diesel" },
+  { code: "HYBRID", name: "Hybride" },
+  { code: "PHEV", name: "Hybride rechargeable" },
+  { code: "ELECTRIC", name: "Électrique" },
+];
+
+export const TRANSMISSION_TYPE_SEEDS: readonly ReferentialSeedRow[] = [
+  { code: "AUTOMATIC", name: "Automatique" },
+  { code: "MANUAL", name: "Manuelle" },
+  { code: "CVT", name: "CVT" },
+  { code: "DCT", name: "DCT" },
+];
+
 /**
  * Matrice rôle → permission.
  *

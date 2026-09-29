@@ -44,9 +44,13 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_profile_id_fkey" FOREI
 -- ============================================================================
 
 -- Contraintes CHECK sur les montants (T04) ----------------------------------
-ALTER TABLE public.vehicles
-  ADD CONSTRAINT "vehicles_public_price_non_negative" CHECK ("public_price" >= 0),
-  ADD CONSTRAINT "vehicles_reseller_price_non_negative" CHECK ("reseller_price" IS NULL OR "reseller_price" >= 0);
+-- ATTENTION : `vehicles` ne porte PLUS de colonne de prix (décision D10) —
+-- `public_price`, `reseller_price` et `currency` ont migré vers `vehicle_prices`.
+-- Les contrôles de montants portent donc sur les tables qui les détiennent.
+ALTER TABLE public.vehicle_prices
+  ADD CONSTRAINT "vehicle_prices_base_amount_non_negative" CHECK ("base_amount" >= 0),
+  ADD CONSTRAINT "vehicle_prices_transport_amount_non_negative" CHECK ("transport_amount" IS NULL OR "transport_amount" >= 0),
+  ADD CONSTRAINT "vehicle_prices_validity_range" CHECK ("valid_to" IS NULL OR "valid_from" IS NULL OR "valid_to" >= "valid_from");
 
 ALTER TABLE public.orders
   ADD CONSTRAINT "orders_agreed_price_non_negative" CHECK ("agreed_price" >= 0);
@@ -64,6 +68,21 @@ CREATE INDEX IF NOT EXISTS "leads_vehicle_id_idx" ON public.leads (vehicle_id);
 CREATE INDEX IF NOT EXISTS "orders_vehicle_id_idx" ON public.orders (vehicle_id);
 CREATE INDEX IF NOT EXISTS "custom_requests_customer_id_idx" ON public.custom_requests (customer_id);
 CREATE INDEX IF NOT EXISTS "audit_logs_actor_profile_id_idx" ON public.audit_logs (actor_profile_id);
+
+-- Index sur les clés étrangères des objets L2 non couvertes (T06) ------------
+-- Les colonnes en tête des index uniques Prisma (brand_id+slug, model_id+name,
+-- category_id+code, vehicle_id+display_order, vehicle_id+feature_definition_id,
+-- vehicle_id+pricing_profile+is_active, vehicle_id+changed_at) sont déjà couvertes.
+CREATE INDEX IF NOT EXISTS "vehicle_trims_generation_id_idx" ON public.vehicle_trims (generation_id);
+CREATE INDEX IF NOT EXISTS "vehicles_generation_id_idx" ON public.vehicles (generation_id);
+CREATE INDEX IF NOT EXISTS "vehicles_trim_id_idx" ON public.vehicles (trim_id);
+CREATE INDEX IF NOT EXISTS "vehicles_fuel_type_id_idx" ON public.vehicles (fuel_type_id);
+CREATE INDEX IF NOT EXISTS "vehicles_transmission_type_id_idx" ON public.vehicles (transmission_type_id);
+CREATE INDEX IF NOT EXISTS "vehicles_body_type_id_idx" ON public.vehicles (body_type_id);
+CREATE INDEX IF NOT EXISTS "vehicles_exterior_color_id_idx" ON public.vehicles (exterior_color_id);
+CREATE INDEX IF NOT EXISTS "vehicles_interior_color_id_idx" ON public.vehicles (interior_color_id);
+CREATE INDEX IF NOT EXISTS "vehicle_features_feature_definition_id_idx" ON public.vehicle_features (feature_definition_id);
+CREATE INDEX IF NOT EXISTS "vehicle_options_option_id_idx" ON public.vehicle_options (option_id);
 
 -- Index partiel catalogue (T06) --------------------------------------------
 -- La publication (is_published) est distincte du statut commercial : le

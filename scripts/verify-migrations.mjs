@@ -293,8 +293,9 @@ function main() {
   } else {
     const m04Text = normalize(m04.sql);
     const expectedChecks = [
-      'vehicles_public_price_non_negative',
-      'vehicles_reseller_price_non_negative',
+      'vehicle_prices_base_amount_non_negative',
+      'vehicle_prices_transport_amount_non_negative',
+      'vehicle_prices_validity_range',
       'orders_agreed_price_non_negative',
       'custom_requests_budget_min_non_negative',
       'custom_requests_budget_max_non_negative',
@@ -309,8 +310,25 @@ function main() {
       'custom_requests_customer_id_idx',
       'audit_logs_actor_profile_id_idx',
       'vehicles_published_at_idx',
+      'vehicle_trims_generation_id_idx',
+      'vehicles_generation_id_idx',
+      'vehicles_trim_id_idx',
+      'vehicles_fuel_type_id_idx',
+      'vehicles_transmission_type_id_idx',
+      'vehicles_body_type_id_idx',
+      'vehicles_exterior_color_id_idx',
+      'vehicles_interior_color_id_idx',
+      'vehicle_features_feature_definition_id_idx',
+      'vehicle_options_option_id_idx',
     ]) {
       if (!m04Text.includes(idx)) fail(`M04 : index « ${idx} » absent (T06)`);
+    }
+    // Les colonnes de prix ont quitté `vehicles` (décision D10) : ces colonnes
+    // ne doivent plus apparaître du tout dans le code de M04 (aucun CHECK de montant).
+    // Les commentaires sont ignorés : seule l'instruction SQL compte.
+    const m04Code = splitStatements(m04.sql).map(normalize).join('\n');
+    if (/(public_price|reseller_price)/.test(m04Code)) {
+      fail('M04 : référence à public_price/reseller_price de « vehicles » : colonnes supprimées (D10)');
     }
     if (!/where is_published = true/.test(m04Text)) fail('M04 : index partiel catalogue (WHERE is_published = true) absent (T06)');
     if (!m04Text.includes('revoke update, delete')) fail('M04 : REVOKE UPDATE, DELETE sur audit_logs absent (T05)');
@@ -333,8 +351,19 @@ function main() {
     const only = (t, ...cs) => cmdsOf(t).size === cs.length && cs.every((c) => cmdsOf(t).has(c));
 
     // refus par défaut : aucune policy client sur ces tables
-    for (const t of ['staff_profiles', 'staff_roles', 'roles', 'permissions', 'role_permissions', 'audit_logs', 'brands', 'vehicle_models', 'vehicle_documents', 'order_events']) {
+    const defaultDeny = [
+      'staff_profiles', 'staff_roles', 'roles', 'permissions', 'role_permissions', 'audit_logs',
+      'brands', 'vehicle_models', 'vehicle_documents', 'order_events',
+      'vehicle_generations', 'vehicle_trims', 'body_types', 'fuel_types', 'transmission_types',
+      'colors', 'option_categories', 'options', 'feature_definitions',
+      'vehicle_features', 'vehicle_options',
+      'vehicle_prices', 'exchange_rates', 'price_history',
+    ];
+    for (const t of defaultDeny) {
       if (cmdsOf(t).size) fail(`M05 : policy client inattendue sur « ${t} » (${[...cmdsOf(t)].join(', ')}) — refus par défaut attendu`);
+      // refus par défaut = aucun privilège de table non plus (le serveur seul lit/écrit).
+      const grantRe = new RegExp(`grant [^;]* on public\\.${t}\\b`);
+      if (grantRe.test(m05Text)) fail(`M05 : GRANT sur « ${t} » interdit — refus par défaut attendu (aucun GRANT client)`);
     }
     // catalogue public : SELECT seulement
     if (!only('vehicles', 'select')) fail(`M05 : « vehicles » doit n'accorder que SELECT (obtenu : ${[...cmdsOf('vehicles')].join(', ') || 'aucune policy'})`);
@@ -368,20 +397,46 @@ function main() {
       fail('M05 : aucun GRANT UPDATE colonne par colonne sur customer_profiles');
     }
     // Catalogue public : aucun GRANT SELECT global sur « vehicles » (il exposerait
-    // « reseller_price » au client malgré RLS, qui filtre des lignes et non des colonnes).
-    if (/grant select on public\.vehicles/.test(m05Text)) {
-      fail('M05 : GRANT SELECT global sur « vehicles » interdit (exposerait reseller_price)');
+    // les colonnes internes — sourcing fournisseur, provenance — malgré RLS, qui
+    // filtre des lignes et non des colonnes ; et `public_price`/`reseller_price`
+    // n'existent plus sur cette table depuis la décision D10).
+    if (/grant select on public\.vehicles\b/.test(m05Text)) {
+      fail('M05 : GRANT SELECT global sur « vehicles » interdit (exposerait les colonnes internes)');
     }
-    const vehiclesColumnGrant = /grant select \(([^)]*)\) on public\.vehicles/.exec(m05Text);
-    if (!vehiclesColumnGrant) {
+    const vehiclesColumnGrants = [...m05Text.matchAll(/grant select \(([^)]*)\) on public\.vehicles\b/g)];
+    if (!vehiclesColumnGrants.length) {
       fail('M05 : GRANT SELECT colonne par colonne absent sur « vehicles »');
     } else {
-      const grantedCols = new Set(vehiclesColumnGrant[1].split(',').map((s) => s.trim().replace(/"/g, '')));
-      if (grantedCols.has('reseller_price')) {
-        fail('M05 : GRANT SELECT sur vehicles.reseller_price interdit (tarif Revendeur, doc 07 §3)');
+      // Toutes les attributions de colonnes sont contrôlées (une attribution
+      // supplémentaire ne doit pas pouvoir contourner l'exclusion).
+      const union = new Set();
+      for (const m of vehiclesColumnGrants) {
+        const cols = m[1].split(',').map((s) => s.trim().replace(/"/g, ''));
+        for (const c of cols) {
+          union.add(c);
+          for (const forbidden of ['reseller_price', 'public_price', 'supplier_reference', 'supplier_name', 'source_url', 'eligibility_status']) {
+            if (c === forbidden) {
+              fail(`M05 : GRANT SELECT sur vehicles.${forbidden} interdit (colonne interne/serveur)`);
+            }
+          }
+        }
       }
-      if (!grantedCols.has('public_price')) {
-        fail('M05 : GRANT SELECT sur vehicles.public_price attendu (prix Standard public)');
+      // Le prix n'est plus porté par `vehicles` (D10) : la lecture client doit se
+      // limiter aux colonnes descriptives du catalogue publié.
+      for (const expected of ['reference', 'slug', 'title', 'brand_id', 'model_id', 'condition', 'year', 'logistics_location', 'commercial_status', 'is_published']) {
+        if (!union.has(expected)) {
+          fail(`M05 : GRANT SELECT sur vehicles.${expected} attendu (colonne publique du catalogue)`);
+        }
+      }
+      // Fermeture : tout autre GRANT visant « vehicles » (forme globale, table
+      // quotée, colonnes + rôle, etc.) est refusé — seul le GRANT colonne par
+      // colonne en SELECT est admis.
+      for (const stmt of splitStatements(m05.sql).map(normalize)) {
+        if (!/^grant\b/.test(stmt)) continue;
+        if (!/public\.("?)vehicles?\1\b/.test(stmt) && !/\bvehicles\b/.test(stmt)) continue;
+        if (!/^grant select \([^)]*\) on public\.("?)vehicles?\1( to [a-z0-9_,\s]+)?$/.test(stmt)) {
+          fail(`M05 : GRANT non conforme sur « vehicles » (seul GRANT SELECT colonne par colonne est admis) : ${stmt.slice(0, 80)}`);
+        }
       }
     }
     // storage : au moins une policy sur storage.objects

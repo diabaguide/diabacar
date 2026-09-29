@@ -11,6 +11,13 @@
 --     vehicle_documents, brands, vehicle_models) n'ont AUCUNE policy client :
 --     leur lecture et leur écriture passent exclusivement par le serveur
 --     (rôle service_role).
+--   * Les référentiels du lot L2 (vehicle_generations, vehicle_trims, body_types,
+--     fuel_types, transmission_types, colors, option_categories, options,
+--     feature_definitions) et les tables de prix (vehicle_prices, exchange_rates,
+--     price_history) ainsi que les associations de caractéristiques
+--     (vehicle_features, vehicle_options) restent en REFUS PAR DÉFAUT : RLS
+--     activée, AUCUNE policy client et AUCUN GRANT — le serveur seul les
+--     lit/écrit (service_role).
 --   * Les requêtes « lignes propres » s'appuient sur deux fonctions helper
 --     SECURITY DEFINER STABLE, ce qui évite la récursion des policies sur
 --     « profiles » et contourne RLS pour la seule jointure auth.uid().
@@ -187,9 +194,23 @@ ALTER TABLE public.staff_roles          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.role_permissions     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.brands               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_models       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_generations  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_trims        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.body_types           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fuel_types           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transmission_types   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.colors               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.option_categories    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.options              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.feature_definitions  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicles             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_media        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_documents    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_features     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_options      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_prices       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exchange_rates       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_history        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorite_vehicles    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_searches       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads                ENABLE ROW LEVEL SECURITY;
@@ -203,16 +224,27 @@ ALTER TABLE public.audit_logs           ENABLE ROW LEVEL SECURITY;
 --    La publication (is_published) est distincte du statut commercial :
 --    c'est elle, et elle seule, qui gouverne l'accès public.
 -- ----------------------------------------------------------------------------
--- GRANT SELECT colonne par colonne : `reseller_price` est EXCLU de la lecture cliente.
--- L'exigence du doc 07 §3 (« voir prix Revendeur : Non pour visiteur et Standard ») et la
--- menace « accès tarif Revendeur » du doc 17 §1 imposent que le tarif Revendeur ne soit
--- jamais lisible par un client, même au travers de l'API PostgREST directe : un
--- `GRANT SELECT` global sur la table exposerait la colonne malgré RLS (qui filtre des
--- lignes, pas des colonnes). Le tarif Revendeur ne peut donc être servi que par le
--- serveur (`service_role`) via `services/pricing.service.ts`.
-GRANT SELECT (id, reference, slug, brand_id, model_id, title, condition, location,
-              commercial_status, is_published, year, mileage, fuel, transmission,
-              public_price, currency, published_at, created_at, updated_at)
+-- GRANT SELECT colonne par colonne : les colonnes internes/serveur sont EXCLUES.
+-- `vehicles` a migré ses prix vers `vehicle_prices` (décision D10) : il n'existe
+-- donc plus de `public_price`/`reseller_price` sur cette table, et AUCUN tarif,
+-- Standard ou Revendeur, ne peut plus être exposé par un GRANT sur `vehicles`.
+-- Sont en revanche EXCLUES les colonnes de sourcing interne (fournisseur et
+-- provenance) et l'éligibilité import, qui ne doivent jamais être servies au client :
+--   supplier_reference, supplier_name, source_type, source_url, eligibility_status.
+-- L'exigence du doc 07 §3 (« voir prix Revendeur : Non pour visiteur et Standard »)
+-- et la menace « accès tarif Revendeur » du doc 17 §1 imposent qu'un prix Revendeur
+-- ne soit jamais lisible par un client, même au travers de l'API PostgREST directe :
+-- un `GRANT SELECT` global sur la table exposerait des colonnes malgré RLS (qui
+-- filtre des lignes, pas des colonnes). Le contrôle T16 interdit donc tout
+-- `GRANT SELECT` global sur `vehicles`. Les tarifs et les colonnes de sourcing ne
+-- peuvent être servis que par le serveur (`service_role`).
+GRANT SELECT (id, reference, slug, title, description, brand_id, model_id,
+              generation_id, trim_id, condition, year, first_registration_date,
+              mileage, previous_owners, accident_known, service_history_available,
+              fuel_type_id, transmission_type_id, body_type_id, exterior_color_id,
+              interior_color_id, power_kw, power_hp, engine_displacement, doors,
+              seats, logistics_location, commercial_status, is_published, featured,
+              published_at, archived_at, created_at, updated_at)
   ON public.vehicles TO anon, authenticated;
 GRANT SELECT ON public.vehicle_media TO anon, authenticated;
 
@@ -231,11 +263,19 @@ CREATE POLICY vehicle_media_select_published ON public.vehicle_media
     )
   );
 
--- NOTE : « brands » et « vehicle_models » ne reçoivent volontairement AUCUNE
--- policy de lecture (non listés dans le périmètre autorisé). Le catalogue les
--- référence via le serveur (rôle service_role). Une policy SELECT sur les lignes
--- « active = true » devra être ajoutée par décision explicite si un accès direct
--- depuis le client est requis.
+-- NOTE : « brands », « vehicle_models », « vehicle_generations », « vehicle_trims »,
+-- « body_types », « fuel_types », « transmission_types », « colors »,
+-- « option_categories », « options » et « feature_definitions » ne reçoivent
+-- volontairement AUCUNE policy de lecture (non listés dans le périmètre autorisé).
+-- Il en va de même des tables d'association « vehicle_features » et
+-- « vehicle_options », des tables de prix « vehicle_prices », « exchange_rates » et
+-- « price_history », et de « vehicle_documents ». Toutes sont en REFUS PAR DÉFAUT :
+-- RLS activée et aucune policy, donc aucun accès pour anon/authenticated. Le
+-- catalogue les référence via le serveur (rôle service_role), qui seul lit et
+-- écrit ces référentiels, ces associations et ces montants. Une policy SELECT
+-- devra être ajoutée par décision explicite si un accès direct depuis le client
+-- est requis (et un GRANT colonne par colonne, jamais un GRANT global, pour tout
+-- objet portant des colonnes internes).
 
 -- ----------------------------------------------------------------------------
 -- 6. Profil et profil client : lecture de sa ligne, mise à jour de sa ligne

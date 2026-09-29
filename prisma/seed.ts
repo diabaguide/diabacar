@@ -19,11 +19,14 @@
 import { PrismaClient } from "@prisma/client";
 import { assertNonProductionDatabase, fail, loadLocalEnv } from "../scripts/database-guard";
 import {
+  BODY_TYPE_SEEDS,
+  FUEL_TYPE_SEEDS,
   PERMISSION_CODES,
   PERMISSION_LABELS,
   PERMISSION_MODULES,
   ROLE_DEFINITIONS,
   ROLE_PERMISSION_MATRIX,
+  TRANSMISSION_TYPE_SEEDS,
   type RoleCode,
 } from "./seed-data";
 
@@ -44,6 +47,33 @@ export async function seed(prisma: PrismaClient): Promise<void> {
       where: { code: role.code },
       update: { name: role.name, description: role.description },
       create: { code: role.code, name: role.name, description: role.description },
+    });
+  }
+
+  // 2 bis. Référentiel automobile explicitement nommé par le doc 13 §« Seeds obligatoires »
+  //    (carrosseries, énergies, boîtes de vitesses) — clé naturelle : `code`. Aucune marque, aucun
+  //    modèle, aucune couleur : ces valeurs ne sont pas fournies (D14) et ne sont pas inventées.
+  for (const bodyType of BODY_TYPE_SEEDS) {
+    await prisma.bodyType.upsert({
+      where: { code: bodyType.code },
+      update: { name: bodyType.name },
+      create: { code: bodyType.code, name: bodyType.name },
+    });
+  }
+
+  for (const fuelType of FUEL_TYPE_SEEDS) {
+    await prisma.fuelType.upsert({
+      where: { code: fuelType.code },
+      update: { name: fuelType.name },
+      create: { code: fuelType.code, name: fuelType.name },
+    });
+  }
+
+  for (const transmission of TRANSMISSION_TYPE_SEEDS) {
+    await prisma.transmissionType.upsert({
+      where: { code: transmission.code },
+      update: { name: transmission.name },
+      create: { code: transmission.code, name: transmission.name },
     });
   }
 
@@ -123,10 +153,20 @@ async function main(): Promise<void> {
     const permissionCount = await prisma.permission.count({
       where: { code: { in: [...PERMISSION_CODES] } },
     });
+    const bodyTypeCount = await prisma.bodyType.count({
+      where: { code: { in: BODY_TYPE_SEEDS.map((row) => row.code) } },
+    });
+    const fuelTypeCount = await prisma.fuelType.count({
+      where: { code: { in: FUEL_TYPE_SEEDS.map((row) => row.code) } },
+    });
+    const transmissionCount = await prisma.transmissionType.count({
+      where: { code: { in: TRANSMISSION_TYPE_SEEDS.map((row) => row.code) } },
+    });
 
     console.info(
       `[seed] DIABACAR : ${permissionCount}/${PERMISSION_CODES.length} permissions, ` +
-        `${roles.length}/${ROLE_DEFINITIONS.length} rôles.`,
+        `${roles.length}/${ROLE_DEFINITIONS.length} rôles, ` +
+        `${bodyTypeCount} carrosseries, ${fuelTypeCount} énergies, ${transmissionCount} boîtes de vitesses.`,
     );
     for (const role of roles) {
       console.info(`[seed]   ${role.code} (${role.name}) : ${role.permissions.length} permissions`);
