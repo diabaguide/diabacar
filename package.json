@@ -19,6 +19,7 @@
     "prisma:migrate:status": "prisma migrate status",
     "db:seed": "prisma db seed",
     "seed": "tsx prisma/seed.ts",
+    "seed:demo": "tsx prisma/seed-demo.ts",
     "staff:grant": "tsx scripts/staff-grant.ts"
   },
   "prisma": {
