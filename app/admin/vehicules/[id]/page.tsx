@@ -7,7 +7,7 @@ import { VehicleForm } from "@/components/admin/VehicleForm";
 import { VehiclePreviewCard } from "@/components/admin/VehiclePreviewCard";
 import { VehicleStatusPanel } from "@/components/admin/VehicleStatusPanel";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import { logoutAction } from "@/app/my-diaba-auto/actions";
 import { loadVehicleReferentialOptions } from "@/app/admin/catalog-options";
 import { createAdminMetadata, resolveAdminAccess } from "@/app/admin/guard";
 import { toPricingActor } from "@/services/identity.service";
@@ -26,7 +26,7 @@ import { getVehicle } from "@/services/vehicle.service";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createAdminMetadata(
-  "Fiche véhicule — Back-office DIABACAR",
+  "Fiche véhicule — Back-office Diaba Auto",
   "Édition, médias, prix et aperçu de la fiche.",
 );
 

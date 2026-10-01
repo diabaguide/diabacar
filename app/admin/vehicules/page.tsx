@@ -10,7 +10,7 @@ import {
   type SelectOption,
 } from "@/components/admin/admin-view";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import { logoutAction } from "@/app/my-diaba-auto/actions";
 import { createAdminMetadata, resolveAdminAccess } from "@/app/admin/guard";
 import { listVehicles, type VehicleListFilters } from "@/services/vehicle.service";
 
@@ -23,7 +23,7 @@ import { listVehicles, type VehicleListFilters } from "@/services/vehicle.servic
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createAdminMetadata(
-  "Véhicules — Back-office DIABACAR",
+  "Véhicules — Back-office Diaba Auto",
   "Liste et recherche des véhicules.",
 );
 

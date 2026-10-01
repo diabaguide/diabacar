@@ -10,7 +10,7 @@ import {
 import { LoginForm } from "@/components/auth/LoginForm";
 import { StatusMessage } from "@/components/auth/StatusMessage";
 
-export const metadata: Metadata = { title: "Connexion — DIABACAR" };
+export const metadata: Metadata = { title: "Connexion — Diaba Auto" };
 
 /* Les paramètres d'URL dépendent de la requête : aucun rendu statique n'est possible. */
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 /** Rappel du contexte de la redirection, sans jamais nommer de ressource privée d'un tiers. */
 function contextMessage(nextPath: string): string {
   if (nextPath.startsWith("/admin")) {
-    return "Connexion requise pour accéder au back-office DIABACAR.";
+    return "Connexion requise pour accéder au back-office Diaba Auto.";
   }
 
   if (nextPath !== AFTER_LOGIN_PATH) {
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-bold text-[#011D4F]">Connexion</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Accédez à votre espace My DIABACAR avec l&apos;adresse e-mail et le mot de passe utilisés à
+        Accédez à votre espace My Diaba Auto avec l&apos;adresse e-mail et le mot de passe utilisés à
         l&apos;inscription.
       </p>
 

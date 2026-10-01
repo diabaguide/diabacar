@@ -9,8 +9,8 @@ import { defaultRateLimitRules } from "@/services/rate-limit.service";
 
 const baseEnv = {
   APP_ENV: "development",
-  DATABASE_URL: "postgresql://user:pw@localhost:5432/diabacar",
-  DIRECT_URL: "postgresql://user:pw@localhost:5432/diabacar",
+  DATABASE_URL: "postgresql://user:pw@localhost:5432/diaba-auto",
+  DIRECT_URL: "postgresql://user:pw@localhost:5432/diaba-auto",
   SUPABASE_SERVICE_ROLE_KEY: "service-role-value",
   APP_SECRET: "0123456789abcdef0123456789abcdef",
   AUTH_REDIRECT_URL: "http://localhost:3000/auth/callback",

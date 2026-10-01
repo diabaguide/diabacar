@@ -2,7 +2,7 @@ import type { Actor } from "@/services/identity.service";
 import type { ResellerStatus } from "@/services/pricing.service";
 
 /**
- * Logique de présentation de My DIABACAR, isolée du JSX pour être testée sans DOM.
+ * Logique de présentation de My Diaba Auto, isolée du JSX pour être testée sans DOM.
  *
  * Contrainte éditoriale (dev.md §8) : aucun numéro, aucune adresse, aucun témoignage et aucune
  * promesse commerciale ne sont inventés. Les libellés décrivent uniquement l'état enregistré.
@@ -20,7 +20,7 @@ export const resellerStatusLabels: Record<ResellerStatus, ResellerStatusView> = 
   },
   PENDING: {
     label: "Demande en cours d'examen",
-    description: "Votre demande de statut Revendeur a été enregistrée et attend une décision de DIABACAR.",
+    description: "Votre demande de statut Revendeur a été enregistrée et attend une décision de Diaba Auto.",
   },
   APPROVED: {
     label: "Revendeur approuvé",
@@ -47,9 +47,9 @@ export function describeResellerStatus(status: string): ResellerStatusView {
 }
 
 /** États d'affichage de l'espace privé, dérivés de l'acteur serveur. */
-export type MyDiabacarMode = "visitor" | "suspended" | "customer" | "staff";
+export type MyDiabaAutoMode = "visitor" | "suspended" | "customer" | "staff";
 
-export function resolveMyDiabacarMode(actor: Actor): MyDiabacarMode {
+export function resolveMyDiabaAutoMode(actor: Actor): MyDiabaAutoMode {
   switch (actor.kind) {
     case "visitor":
       return "visitor";

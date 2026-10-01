@@ -51,9 +51,9 @@ Serveur `npm run start` démarré pour de vrai, puis sondé avec `curl`. **Journ
 | `/voitures?condition=FOO` | 200 (écran « filtres invalides » géré, pas de trace serveur) |
 | `/marque/byd` | 200 |
 | `/voitures/inconnu` | **200** — voir §4.1 : sans base, le service lève au lieu de retourner `null`, `notFound()` n'est donc pas atteignable ici |
-| `/robots.txt` | 200 (`Allow: /` ; `Disallow: /admin`, `/my-diabacar`, `/api`, `/auth` ; sitemap absolu) |
+| `/robots.txt` | 200 (`Allow: /` ; `Disallow: /admin`, `/my-diaba-auto`, `/api`, `/auth` ; sitemap absolu) |
 | `/sitemap.xml` | 200 (pages publiques de `lib/routes.ts`, tolérant à l'absence de base) |
-| `/admin`, `/my-diabacar` | 200 (comportement du lot 2 conservé, `noindex`) |
+| `/admin`, `/my-diaba-auto` | 200 (comportement du lot 2 conservé, `noindex`) |
 
 Aucune occurrence de `supplier`, `source_url`, `sourceUrl`, `marge` ou `reseller` dans le HTML servi. **Cette sonde ne prouve pas grand-chose à elle seule** : aucun véhicule n'étant rendu (base absente), la garantie « aucun champ d'approvisionnement » repose sur les tests unitaires de projection (§3.3), pas sur ce rendu.
 
@@ -85,7 +85,7 @@ Toutes les lectures publiques lèvent `PrismaClientInitializationError` faute de
 - **Sitemap** : la tolérance à l'absence de base n'a été observée qu'auprès d'un catalogue vide ; l'inclusion réelle des fiches publiées n'est pas démontrée. Base d'URL par défaut `http://localhost:3000` tant que `NEXT_PUBLIC_APP_URL` n'est pas fournie.
 - **Médias** : aucune URL de média réelle n'a pu être produite (aucun bucket Supabase configuré) ; `resolvePublicMediaUrl` n'a été exercé qu'en unitaire. Le comportement dépend de D18 (bucket public ou privé).
 - **Serveur de vérification resté actif** : le `next start` de contrôle (port 4311) n'a pas pu être arrêté depuis la session (commande de recherche de processus refusée par la porte d'approbation). Le port 4311 reste occupé par un processus orphelin ; à arrêter manuellement (`kill` sur le processus `next start -p 4311`). Aucun impact sur le dépôt. Un autre `next start -p 3000` préexistant n'a pas été touché.
-- **Hors périmètre du lot, comme prévu** : favoris visiteur et client (D30), langues EN/AR et RTL (D29), calcul des règles d'import (D31), mode « prix sur demande » (D24), My DIABACAR, commandes, CRM.
+- **Hors périmètre du lot, comme prévu** : favoris visiteur et client (D30), langues EN/AR et RTL (D29), calcul des règles d'import (D31), mode « prix sur demande » (D24), My Diaba Auto, commandes, CRM.
 
 ## 5. Suite
 
@@ -93,4 +93,4 @@ Toutes les lectures publiques lèvent `PrismaClientInitializationError` faute de
 2. **Amorcer des données réelles** : marques, modèles (D14/D25), puis véhicules avec média principal public et prix actif STANDARD, sinon le catalogue public restera vide (D32).
 3. **Trancher** D26 (taux de change), D27 (numéro WhatsApp et paramètres de contact), D28 (indexation des véhicules vendus), D29 (langues et routage), D30 (favoris : à remonter ou non avant le lot 4), D31 (règles d'import).
 4. **Renseigner `NEXT_PUBLIC_APP_URL`** en préproduction et production, ainsi que `images.remotePatterns` dans `next.config.ts` pour que les visuels du bucket soient optimisés.
-5. **Lot suivant** : My DIABACAR — favoris, recherches enregistrées et demandes (`dev.md` §11), en réutilisant la voie de lecture publique et les gardes existantes.
+5. **Lot suivant** : My Diaba Auto — favoris, recherches enregistrées et demandes (`dev.md` §11), en réutilisant la voie de lecture publique et les gardes existantes.

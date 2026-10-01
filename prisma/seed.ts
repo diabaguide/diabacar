@@ -1,5 +1,5 @@
 /**
- * Seed idempotent DIABACAR — rôles ADMIN et COMMERCIAL, 26 permissions officielles et associations.
+ * Seed idempotent Diaba Auto — rôles ADMIN et COMMERCIAL, 26 permissions officielles et associations.
  *
  * Cadre : `docs/13_Plan_migrations_et_seeds.docx` §« Seeds » (« Seed idempotent des codes de rôles ADMIN et
  * COMMERCIAL, des permissions et de leurs associations minimales ») et `docs/07_Roles_et_permissions.docx`.
@@ -139,7 +139,7 @@ export async function seed(prisma: PrismaClient): Promise<void> {
 
 async function main(): Promise<void> {
   loadLocalEnv();
-  assertNonProductionDatabase("le seed DIABACAR");
+  assertNonProductionDatabase("le seed Diaba Auto");
 
   const prisma = new PrismaClient();
   try {
@@ -164,7 +164,7 @@ async function main(): Promise<void> {
     });
 
     console.info(
-      `[seed] DIABACAR : ${permissionCount}/${PERMISSION_CODES.length} permissions, ` +
+      `[seed] Diaba Auto : ${permissionCount}/${PERMISSION_CODES.length} permissions, ` +
         `${roles.length}/${ROLE_DEFINITIONS.length} rôles, ` +
         `${bodyTypeCount} carrosseries, ${fuelTypeCount} énergies, ${transmissionCount} boîtes de vitesses.`,
     );

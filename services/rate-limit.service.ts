@@ -20,7 +20,7 @@ export type RateLimitResult = {
   retryAfterMs: number;
 };
 
-/** Seuils provisoires — à valider avec DIABACAR (D07). */
+/** Seuils provisoires — à valider avec Diaba Auto (D07). */
 export const defaultRateLimitRules = {
   authentication: { limit: 10, windowMs: 60_000 },
   registration: { limit: 5, windowMs: 60 * 60_000 },

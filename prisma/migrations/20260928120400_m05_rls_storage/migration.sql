@@ -1,5 +1,5 @@
 -- ============================================================================
--- DIABACAR - M05 : liaison auth.users, RLS, policies et buckets Storage
+-- Diaba Auto - M05 : liaison auth.users, RLS, policies et buckets Storage
 -- SQL entièrement manuel : ces objets ne sont pas exprimables par Prisma (T01).
 --
 -- Principes retenus (décisions T03/T05, docs 11 et 12) :

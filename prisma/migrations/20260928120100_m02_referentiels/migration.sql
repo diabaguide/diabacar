@@ -1,5 +1,5 @@
 -- ============================================================================
--- DIABACAR - M02 : référentiels automobiles, véhicule complet, médias, documents et prix
+-- Diaba Auto - M02 : référentiels automobiles, véhicule complet, médias, documents et prix
 -- ============================================================================
 -- Structure SQL générée par : npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 -- NE PAS éditer la partie générée à la main : régénérer depuis prisma/schema.prisma (décision T01).

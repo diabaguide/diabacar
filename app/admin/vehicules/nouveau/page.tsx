@@ -4,7 +4,7 @@ import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { VehicleForm } from "@/components/admin/VehicleForm";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import { logoutAction } from "@/app/my-diaba-auto/actions";
 import { loadVehicleReferentialOptions } from "@/app/admin/catalog-options";
 import { createAdminMetadata, resolveAdminAccess } from "@/app/admin/guard";
 
@@ -17,7 +17,7 @@ import { createAdminMetadata, resolveAdminAccess } from "@/app/admin/guard";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createAdminMetadata(
-  "Nouveau véhicule — Back-office DIABACAR",
+  "Nouveau véhicule — Back-office Diaba Auto",
   "Création d'un véhicule.",
 );
 

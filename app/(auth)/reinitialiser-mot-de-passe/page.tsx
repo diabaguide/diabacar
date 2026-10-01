@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PasswordResetForm } from "@/components/auth/PasswordResetForm";
 
-export const metadata: Metadata = { title: "Nouveau mot de passe — DIABACAR" };
+export const metadata: Metadata = { title: "Nouveau mot de passe — Diaba Auto" };
 
 export const dynamic = "force-dynamic";
 

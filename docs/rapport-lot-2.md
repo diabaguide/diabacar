@@ -7,7 +7,7 @@
 
 - **Identité serveur** : résolution de l'acteur à chaque requête (`lib/auth/session.ts`) — visiteur, client (Standard ou Revendeur), personnel, ou **compte suspendu** traité comme non authentifié.
 - **Inscription / connexion / récupération / réinitialisation / déconnexion** : écrans complets (`app/(auth)/**`), Server Actions avec validation stricte, limitation de fréquence, messages non révélateurs, route de callback PKCE (`/auth/callback`) et redirections internes validées (aucune redirection ouverte).
-- **My DIABACAR** : tableau de bord, statut Revendeur lisible, édition des seuls champs personnels, état lecture seule pour un compte suspendu, déconnexion.
+- **My Diaba Auto** : tableau de bord, statut Revendeur lisible, édition des seuls champs personnels, état lecture seule pour un compte suspendu, déconnexion.
 - **Back-office** : `/admin` protégé par `requireStaff(actor, "vehicle.view")`, refus neutre sans donnée pour tout autre acteur ; les écrans de gestion arrivent aux lots suivants.
 - **Permissions** : gardes `requireStaff` / `requireCustomer` / `assertOwnership` / `assertOwnProfile`, refus par défaut, `NOT_FOUND` (jamais `FORBIDDEN`) pour masquer l'existence d'une ressource privée.
 - **Audit** : construction d'entrées append-only, actions à auditer fermées, motif obligatoire sur les transitions sensibles, secrets retirés et téléphones masqués.
@@ -28,10 +28,10 @@
 | Typage | `npx tsc --noEmit` | **OK**, 0 erreur |
 | Qualité | `npx eslint .` | **OK**, 0 erreur |
 | Tests | `npx vitest run` | **14 fichiers, 88 tests, tous verts** |
-| Build | `npm run build` | **compilation réussie**, 10 pages, `/my-diabacar` et `/admin` en dynamique |
+| Build | `npm run build` | **compilation réussie**, 10 pages, `/my-diaba-auto` et `/admin` en dynamique |
 | Cohérence migrations ↔ schéma | `node scripts/verify-migrations.mjs` | **ÉCART = 0** (10 enums, 18 tables, 113 colonnes, 23 index, 21 FK) |
 | Schéma | `npx prisma validate` (URL factices) | **valide** |
-| Routes réelles | `next start` + requêtes HTTP | 12 routes en **200**, `/my-diabacar` et `/admin` en `noindex, nofollow, nocache` |
+| Routes réelles | `next start` + requêtes HTTP | 12 routes en **200**, `/my-diaba-auto` et `/admin` en `noindex, nofollow, nocache` |
 | Seed | harnais en mémoire (exécuté par le sous-agent) | 26 permissions, 2 rôles, 35 associations, idempotence et réconciliation vérifiées |
 
 ## 4. Limites et vérifications non réalisées

@@ -10,15 +10,15 @@ import {
 
 describe("absoluteUrl", () => {
   it("construit une URL absolue à partir d'un chemin racine", () => {
-    expect(absoluteUrl("/voitures", "https://diabacar.test")).toBe("https://diabacar.test/voitures");
+    expect(absoluteUrl("/voitures", "https://diaba-auto.test")).toBe("https://diaba-auto.test/voitures");
   });
 
   it("normalise un chemin sans slash initial et une base avec slash final", () => {
-    expect(absoluteUrl("voitures", "https://diabacar.test/")).toBe("https://diabacar.test/voitures");
+    expect(absoluteUrl("voitures", "https://diaba-auto.test/")).toBe("https://diaba-auto.test/voitures");
   });
 
   it("conserve la racine du site", () => {
-    expect(absoluteUrl("/", "https://diabacar.test")).toBe("https://diabacar.test/");
+    expect(absoluteUrl("/", "https://diaba-auto.test")).toBe("https://diaba-auto.test/");
   });
 });
 
@@ -28,7 +28,7 @@ describe("buildVehicleMetadata", () => {
     year: 2021,
     description: "Quatre roues motrices, import Sénégal.",
     slug: "toyota-land-cruiser-2021",
-    imageUrl: "https://cdn.diabacar.test/land-cruiser.jpg",
+    imageUrl: "https://cdn.diaba-auto.test/land-cruiser.jpg",
     standardPriceLabel: "18 500 000 XOF",
     isSold: false,
   } as const;
@@ -39,7 +39,7 @@ describe("buildVehicleMetadata", () => {
     expect(metadata.title).toContain(input.title);
     expect(metadata.title).toContain(String(input.year));
     expect(metadata.title).toContain("Sénégal");
-    expect(metadata.title).toContain("DIABACAR");
+    expect(metadata.title).toContain("Diaba Auto");
   });
 
   it("expose un canonical unique et une description unique", () => {
@@ -54,7 +54,7 @@ describe("buildVehicleMetadata", () => {
     const metadata = buildVehicleMetadata(input);
     const openGraph = JSON.stringify(metadata.openGraph);
 
-    expect(openGraph).toContain("https://cdn.diabacar.test/land-cruiser.jpg");
+    expect(openGraph).toContain("https://cdn.diaba-auto.test/land-cruiser.jpg");
     expect(openGraph).toContain("18 500 000 XOF");
   });
 
@@ -111,7 +111,7 @@ describe("buildVehicleJsonLd", () => {
     year: 2021,
     slug: "toyota-land-cruiser-2021",
     description: "Import Sénégal",
-    imageUrls: ["https://cdn.diabacar.test/land-cruiser.jpg"],
+    imageUrls: ["https://cdn.diaba-auto.test/land-cruiser.jpg"],
     priceLabel: null,
     currency: "XOF",
     mileage: null,

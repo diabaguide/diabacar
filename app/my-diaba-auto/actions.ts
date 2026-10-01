@@ -9,7 +9,7 @@ import { createCustomerRepository } from "@/repositories/customer.repository";
 import { ProfileValidationError, updateOwnCustomerProfile } from "@/services/profile.service";
 
 /**
- * Server Actions de My DIABACAR.
+ * Server Actions de My Diaba Auto.
  *
  * Ordre imposé (dev.md §6) : la session est résolue côté serveur par `getCurrentActor()`, puis
  * `updateOwnCustomerProfile` applique le statut du compte, la permission et la propriété avant toute
@@ -50,7 +50,7 @@ export async function updateProfileAction(formData: FormData): Promise<ProfileAc
     return { error: envelope.error };
   }
 
-  revalidatePath("/my-diabacar");
+  revalidatePath("/my-diaba-auto");
   return ok({ message: "Votre profil a été mis à jour." });
 }
 

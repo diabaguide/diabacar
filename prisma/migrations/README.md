@@ -1,4 +1,4 @@
-# Migrations DIABACAR
+# Migrations Diaba Auto
 
 Migrations versionnées de la base PostgreSQL/Supabase, dans l'ordre imposé par
 `docs/13_Plan_migrations_et_seeds.docx` (décisions T01/T02 de `docs/decisions.md`).

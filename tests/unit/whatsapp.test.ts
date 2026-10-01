@@ -9,7 +9,7 @@ import {
 const vehicle = {
   title: "Toyota Land Cruiser 2021",
   reference: "DIA-000123",
-  url: "https://diabacar.test/voitures/toyota-land-cruiser-2021",
+  url: "https://diaba-auto.test/voitures/toyota-land-cruiser-2021",
 } as const;
 
 describe("readContactConfig", () => {

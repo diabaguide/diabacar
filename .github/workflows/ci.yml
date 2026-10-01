@@ -17,8 +17,8 @@ jobs:
       - run: npm ci
       - run: npm run prisma:validate
         env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/diabacar
-          DIRECT_URL: postgresql://user:password@localhost:5432/diabacar
+          DATABASE_URL: postgresql://user:password@localhost:5432/diaba-auto
+          DIRECT_URL: postgresql://user:password@localhost:5432/diaba-auto
       - name: Vérifier la couverture des migrations (hors ligne, sans base)
         run: node scripts/verify-migrations.mjs
       - run: npm run typecheck

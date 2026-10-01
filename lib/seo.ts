@@ -15,7 +15,7 @@ import type { Metadata } from "next";
  * dans une métadonnée ou un JSON-LD : ces fonctions ne reçoivent que des champs publics.
  */
 
-const SITE_NAME = "DIABACAR";
+const SITE_NAME = "Diaba Auto";
 const DEFAULT_APP_URL = "http://localhost:3000";
 
 /** Base absolue du site : argument explicite, sinon `NEXT_PUBLIC_APP_URL`, sinon développement local. */

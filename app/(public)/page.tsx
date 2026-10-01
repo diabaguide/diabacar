@@ -15,9 +15,9 @@ import { listFeaturedVehicles } from "@/services/catalogue.service";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "DIABACAR — Véhicules neufs et d’occasion Chine / Sénégal",
+  title: "Diaba Auto — Véhicules neufs et d’occasion Chine / Sénégal",
   description:
-    "Parcourez le catalogue DIABACAR : véhicules neufs et d’occasion en Chine ou au Sénégal, prix affichés et prise de contact directe.",
+    "Parcourez le catalogue Diaba Auto : véhicules neufs et d’occasion en Chine ou au Sénégal, prix affichés et prise de contact directe.",
   alternates: { canonical: absoluteUrl("/") },
 };
 
@@ -101,7 +101,7 @@ export default async function HomePage() {
           <h2 className="text-2xl font-bold">{fr.home.resellerTitle}</h2>
           <p className="mt-3 max-w-2xl text-sm text-blue-50">{fr.home.resellerBody}</p>
           <Link
-            href="/my-diabacar"
+            href="/my-diaba-auto"
             className="mt-6 inline-block rounded-full bg-[#0063DF] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0354A3]"
           >
             {fr.home.resellerCta}

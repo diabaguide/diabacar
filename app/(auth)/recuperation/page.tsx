@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RecoveryRequestForm } from "@/components/auth/RecoveryRequestForm";
 
-export const metadata: Metadata = { title: "Récupération de compte — DIABACAR" };
+export const metadata: Metadata = { title: "Récupération de compte — Diaba Auto" };
 
 export const dynamic = "force-dynamic";
 

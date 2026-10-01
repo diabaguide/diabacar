@@ -115,7 +115,7 @@ export function RegisterForm() {
         type="password"
         autoComplete="new-password"
         required
-        hint="8 caractères minimum. Le mot de passe est géré par Supabase Auth et n'est jamais stocké par DIABACAR."
+        hint="8 caractères minimum. Le mot de passe est géré par Supabase Auth et n'est jamais stocké par Diaba Auto."
         disabled={pending}
         error={fieldMessage(state, "password", FIELD_MESSAGES)}
       />

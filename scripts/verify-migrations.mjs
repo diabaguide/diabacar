@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DIABACAR — contrôle hors ligne des migrations M01..M05 (décision T01/T02).
+ * Diaba Auto — contrôle hors ligne des migrations M01..M05 (décision T01/T02).
  *
  * Principe : le schéma `prisma/schema.prisma` est la seule source de vérité de
  * la structure. Le SQL de structure attendu est GÉNÉRÉ par Prisma :
@@ -146,7 +146,7 @@ function readMigrations() {
     }
     e.sql = readFileSync(file, 'utf8');
     if (!e.sql.trim()) fail(`migration.sql vide dans ${e.dir}`);
-    if (e.label.startsWith('m0') && !/--\s*DIABACAR - M0[1-5]/.test(e.sql)) {
+    if (e.label.startsWith('m0') && !/--\s*Diaba Auto - M0[1-5]/.test(e.sql)) {
       fail(`en-tête de migration absent dans ${e.dir}/migration.sql`);
     }
   }
@@ -215,7 +215,7 @@ function inventory(sql) {
 // Exécution
 // ---------------------------------------------------------------------------
 function main() {
-  console.log('DIABACAR — vérification des migrations M01..M05 (hors ligne)');
+  console.log('Diaba Auto — vérification des migrations M01..M05 (hors ligne)');
   console.log('  schéma source : prisma/schema.prisma');
   console.log('');
 

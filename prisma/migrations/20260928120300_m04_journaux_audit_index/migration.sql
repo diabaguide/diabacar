@@ -1,5 +1,5 @@
 -- ============================================================================
--- DIABACAR - M04 : journaux de commande (order_events), audit (audit_logs) et compléments manuels
+-- Diaba Auto - M04 : journaux de commande (order_events), audit (audit_logs) et compléments manuels
 -- ============================================================================
 -- Structure SQL générée par : npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 -- NE PAS éditer la partie générée à la main : régénérer depuis prisma/schema.prisma (décision T01).

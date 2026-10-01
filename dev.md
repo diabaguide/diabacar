@@ -1,17 +1,17 @@
-# DIABACAR — Instructions de développement pour l’IA
+# Diaba Auto — Instructions de développement pour l’IA
 
-Ce fichier guide l’agent qui développe DIABACAR. Il est destiné à être placé à la racine du dépôt de l’application sous le nom `CLAUDE.md`. Il complète les spécifications produit et techniques ; il ne les remplace pas.
+Ce fichier guide l’agent qui développe Diaba Auto. Il est destiné à être placé à la racine du dépôt de l’application sous le nom `CLAUDE.md`. Il complète les spécifications produit et techniques ; il ne les remplace pas.
 
 ## 1. Mission
 
-Construire une application DIABACAR fonctionnelle, maintenable et testée, depuis les fondations jusqu’à la préparation de la production.
+Construire une application Diaba Auto fonctionnelle, maintenable et testée, depuis les fondations jusqu’à la préparation de la production.
 
-DIABACAR présente et commercialise des véhicules neufs et d’occasion situés en Chine ou au Sénégal. Le parcours principal est : découvrir un véhicule, comprendre l’offre, contacter DIABACAR, puis suivre sa demande ou sa commande.
+Diaba Auto présente et commercialise des véhicules neufs et d’occasion situés en Chine ou au Sénégal. Le parcours principal est : découvrir un véhicule, comprendre l’offre, contacter Diaba Auto, puis suivre sa demande ou sa commande.
 
 Trois espaces sont prévus :
 
 - **Site public** : catalogue, recherche, fiches véhicules et prise de contact.
-- **My DIABACAR** : espace personnel du client Standard ou Revendeur.
+- **My Diaba Auto** : espace personnel du client Standard ou Revendeur.
 - **Back-office** : gestion commerciale et administration, selon les permissions.
 
 La V1 ne comprend pas de paiement en ligne. Une demande de contact ne vaut ni réservation, ni commande confirmée, ni vente.
@@ -22,7 +22,7 @@ Avant de développer, lire les fichiers d’instructions du dépôt et la docume
 
 Références métier principales :
 
-1. PRD DIABACAR.
+1. PRD Diaba Auto.
 2. Architecture fonctionnelle.
 3. Modèle de données.
 4. Architecture technique GitHub, Vercel et Supabase.
@@ -56,7 +56,7 @@ Organisation indicative à adapter à l’existant :
 app/
   (public)/
   (auth)/
-  my-diabacar/
+  my-diaba-auto/
   admin/
   api/
 components/
@@ -100,7 +100,7 @@ Ne pas disperser une règle de prix, une permission ou une transition dans plusi
 
 ### Site public
 
-- Accueil et présentation de DIABACAR.
+- Accueil et présentation de Diaba Auto.
 - Catalogue avec recherche, filtres, tri et pagination côté serveur.
 - Fiche véhicule avec galerie, référence, prix applicable, caractéristiques, localisation et disponibilité.
 - Favoris visiteurs.
@@ -111,7 +111,7 @@ Ne pas disperser une règle de prix, une permission ou une transition dans plusi
 
 Routes publiques de référence : `/`, `/voitures`, `/voitures/[slug]`, `/commander`, `/comment-ca-marche`, `/a-propos`, `/contact`.
 
-### My DIABACAR
+### My Diaba Auto
 
 - Tableau de bord et profil personnel.
 - Favoris persistants et recherches enregistrées.
@@ -232,7 +232,7 @@ Utiliser le logo fourni en conservant ses proportions. Palette de référence :
 
 Centraliser les tokens de couleurs, espacements, typographie et composants. Vérifier le contraste de chaque combinaison utilisée : la palette ne garantit pas à elle seule l’accessibilité.
 
-Le public et My DIABACAR sont conçus d’abord pour le mobile. Le back-office privilégie l’efficacité sur ordinateur et reste utilisable sur écran réduit.
+Le public et My Diaba Auto sont conçus d’abord pour le mobile. Le back-office privilégie l’efficacité sur ordinateur et reste utilisable sur écran réduit.
 
 Prévoir pour chaque écran les états chargement, vide, erreur, succès et absence de permission lorsque pertinents. Assurer la navigation clavier, le focus visible, les libellés persistants et des messages d’erreur au bon emplacement.
 
@@ -269,7 +269,7 @@ Suivre la roadmap validée. Ordre de référence :
 1. Fondations, configuration, environnements et CI.
 2. Authentification, profils, permissions et audit.
 3. Référentiels, véhicules et catalogue public.
-4. My DIABACAR, favoris, recherches et demandes.
+4. My Diaba Auto, favoris, recherches et demandes.
 5. Approbation Revendeur, tarification et CRM.
 6. Commandes, disponibilité et suivi logistique.
 7. Administration, contenus, paramètres et analytics.

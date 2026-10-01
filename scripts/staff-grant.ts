@@ -54,7 +54,7 @@ function staffNameFromEmail(email: string): { firstName: string; lastName: strin
   const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
   if (parts.length === 0) {
-    return { firstName: local || "Personnel", lastName: "DIABACAR" };
+    return { firstName: local || "Personnel", lastName: "Diaba Auto" };
   }
   if (parts.length === 1) {
     return { firstName: capitalize(parts[0]), lastName: capitalize(parts[0]) };

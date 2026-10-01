@@ -5,7 +5,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ReferentialPanel } from "@/components/admin/ReferentialPanel";
 import { REFERENTIAL_FORM_FIELDS, REFERENTIAL_SCREEN_ORDER, type SelectOption } from "@/components/admin/admin-view";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import { logoutAction } from "@/app/my-diaba-auto/actions";
 import { createAdminMetadata, resolveAdminAccess } from "@/app/admin/guard";
 import {
   REFERENTIAL_DESCRIPTORS,
@@ -23,7 +23,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createAdminMetadata(
-  "Référentiels — Back-office DIABACAR",
+  "Référentiels — Back-office Diaba Auto",
   "Marques, modèles, carrosseries, énergies, boîtes, couleurs et caractéristiques.",
 );
 

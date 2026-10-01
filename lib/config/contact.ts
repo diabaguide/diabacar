@@ -1,5 +1,5 @@
 /**
- * Configuration de contact DIABACAR (BR-120/BR-121/BR-123).
+ * Configuration de contact Diaba Auto (BR-120/BR-121/BR-123).
  *
  * Le numéro WhatsApp est lu depuis l'environnement et n'est jamais écrit en dur dans un composant.
  * `DEFAULT_WHATSAPP_NUMBER` est la valeur initiale documentée au doc 08 (BR-120) ; elle est à

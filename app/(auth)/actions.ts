@@ -315,7 +315,7 @@ export async function signUpAction(formData: FormData): Promise<AuthActionState>
     }
 
     if (data.session) {
-      return authSuccess("Votre compte a été créé. Bienvenue chez DIABACAR.", AFTER_LOGIN_PATH);
+      return authSuccess("Votre compte a été créé. Bienvenue chez Diaba Auto.", AFTER_LOGIN_PATH);
     }
 
     return authSuccess(

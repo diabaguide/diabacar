@@ -11,7 +11,7 @@ export function SuspendedAccountNotice({ children }: { children?: React.ReactNod
       <h2 className="text-lg font-semibold text-[#7a5310]">Compte en lecture seule</h2>
       <p className="mt-2 text-sm text-[#7a5310]">
         Ce compte est suspendu. Les informations personnelles ne peuvent pas être affichées ni modifiées
-        tant que la situation n&apos;a pas été régularisée par DIABACAR.
+        tant que la situation n&apos;a pas été régularisée par Diaba Auto.
       </p>
       {children}
     </section>
@@ -23,7 +23,7 @@ export function StaffAreaNotice() {
     <section className="rounded-xl border border-slate-200 bg-white p-5">
       <h2 className="text-lg font-semibold text-[#011D4F]">Espace réservé aux comptes clients</h2>
       <p className="mt-2 text-sm text-slate-600">
-        Votre session appartient au personnel DIABACAR. Les informations de cet espace concernent les
+        Votre session appartient au personnel Diaba Auto. Les informations de cet espace concernent les
         comptes clients et ne sont pas affichées ici.
       </p>
       <Link href="/admin" className="mt-4 inline-block text-sm font-semibold text-[#0063DF] hover:text-[#0354A3]">
@@ -39,7 +39,7 @@ export function ProfileUnavailableNotice() {
       <h2 className="text-lg font-semibold text-[#95312a]">Profil indisponible</h2>
       <p className="mt-2 text-sm text-[#95312a]">
         Le profil associé à ce compte n&apos;a pas pu être chargé. Aucune donnée personnelle n&apos;est affichée
-        tant que la situation n&apos;est pas rétablie. Réessayez plus tard ou contactez DIABACAR.
+        tant que la situation n&apos;est pas rétablie. Réessayez plus tard ou contactez Diaba Auto.
       </p>
     </section>
   );

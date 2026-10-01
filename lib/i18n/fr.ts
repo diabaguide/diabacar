@@ -24,7 +24,7 @@ export const fr = {
   locale: "fr",
 
   common: {
-    siteName: "DIABACAR",
+    siteName: "Diaba Auto",
     loading: "Chargement…",
     retry: "Réessayer",
     backToCatalogue: "Retour au catalogue",
@@ -51,7 +51,7 @@ export const fr = {
   catalogue: {
     title: "Catalogue véhicules",
     intro:
-      "Véhicules neufs et d’occasion situés en Chine ou au Sénégal. Les informations affichées proviennent du catalogue DIABACAR.",
+      "Véhicules neufs et d’occasion situés en Chine ou au Sénégal. Les informations affichées proviennent du catalogue Diaba Auto.",
     filtersTitle: "Filtrer la recherche",
     searchLabel: "Recherche",
     brandLabel: "Marque",
@@ -100,21 +100,21 @@ export const fr = {
     priceNote: "Montants communiqués à titre indicatif, hors frais supplémentaires.",
     whatsappCta: "Demander des informations sur WhatsApp",
     whatsappNote:
-      "Échange direct avec DIABACAR. Cette demande d’information ne constitue pas un devis.",
+      "Échange direct avec Diaba Auto. Cette demande d’information ne constitue pas un devis.",
     similarTitle: "Véhicules similaires",
     publishedOn: (date: string) => `Publié le ${date}`,
   },
 
   brand: {
     catalogueTitle: (name: string) => `Véhicules ${name}`,
-    intro: (name: string) => `Tous les véhicules ${name} publiés au catalogue DIABACAR.`,
+    intro: (name: string) => `Tous les véhicules ${name} publiés au catalogue Diaba Auto.`,
     unknown: "Marque inconnue",
   },
 
   home: {
     heroEyebrow: "Véhicules Chine → Sénégal",
     heroTitle:
-      "Trouvez un véhicule en Chine ou au Sénégal, puis contactez DIABACAR.",
+      "Trouvez un véhicule en Chine ou au Sénégal, puis contactez Diaba Auto.",
     heroBody:
       "Catalogue, fiches véhicules et prise de contact directe. Aucun paiement en ligne dans cette version.",
     searchTitle: "Rechercher un véhicule",
@@ -136,14 +136,14 @@ export const fr = {
         body: "Le prix du véhicule et le transport sont indiqués sur deux lignes distinctes.",
       },
       {
-        title: "Contacter DIABACAR",
+        title: "Contacter Diaba Auto",
         body: "Poursuivez l’échange sur WhatsApp ou depuis la page de contact.",
       },
     ],
     resellerTitle: "Vous êtes revendeur ?",
     resellerBody:
       "Une demande de statut Revendeur, une fois approuvée, donne accès aux tarifs qui vous sont réservés.",
-    resellerCta: "Accéder à My DIABACAR",
+    resellerCta: "Accéder à My Diaba Auto",
   },
 
   labels: {

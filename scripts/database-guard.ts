@@ -1,5 +1,5 @@
 /**
- * Garde d'environnement commune aux scripts d'amorçage DIABACAR
+ * Garde d'environnement commune aux scripts d'amorçage Diaba Auto
  * (`prisma db seed`, `npm run staff:grant`, outils de migration).
  *
  * Exigences :

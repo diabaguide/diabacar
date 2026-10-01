@@ -7,7 +7,7 @@
  */
 
 /** Destination par défaut après une connexion ou une réinitialisation réussie. */
-export const AFTER_LOGIN_PATH = "/my-diabacar";
+export const AFTER_LOGIN_PATH = "/my-diaba-auto";
 
 /** Paramètre de reprise utilisé par le middleware (`/connexion?suivant=...`) et par la route de callback. */
 export const NEXT_PATH_PARAM = "suivant";

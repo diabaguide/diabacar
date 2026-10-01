@@ -4,7 +4,7 @@ import { assertOwnProfile, requireCustomer } from "@/services/access.service";
 import type { Actor } from "@/services/identity.service";
 
 /**
- * Profil client (My DIABACAR).
+ * Profil client (My Diaba Auto).
  *
  * Seuls les « champs personnels autorisés » sont acceptés (doc 11). Les champs privilégiés
  * (`userType`, statut de compte, `resellerStatus`, `pricingProfile`, `segment`, rôles) et tout champ

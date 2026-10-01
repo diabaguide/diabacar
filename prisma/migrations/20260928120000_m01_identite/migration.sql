@@ -1,5 +1,5 @@
 -- ============================================================================
--- DIABACAR - M01 : enums d'identité, profils, rôles et permissions
+-- Diaba Auto - M01 : enums d'identité, profils, rôles et permissions
 -- ============================================================================
 -- Structure SQL générée par : npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 -- NE PAS éditer la partie générée à la main : régénérer depuis prisma/schema.prisma (décision T01).

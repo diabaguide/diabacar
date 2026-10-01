@@ -1,4 +1,4 @@
-# Audit d'alignement — corpus documentaire canonique vs dépôt DIABACAR
+# Audit d'alignement — corpus documentaire canonique vs dépôt Diaba Auto
 
 > Date : 2026-09-28. Dépôt : `/opt/data/projects/diabacar` (commit de référence : `34c8b73`).
 > Sources : `docs/03_Modele_de_donnees_SOURCE.docx`, `docs/12_Schema_Prisma_final_propose.docx`,
@@ -45,7 +45,7 @@ Légende : `D` = divergence de référentiel (à trancher) — `C` = à corriger
 | A02 | `AccountStatus` au lieu de `ProfileStatus`, sans `DISABLED` | Doc 12 | `schema.prisma:16` | Un compte désactivé distinct du suspendu n'est pas représentable |
 | A03 | `ResellerStatus.NONE` au lieu de `NOT_APPLICABLE` | Doc 12 | `schema.prisma:21` | Aucun fonctionnel ; écart de vocabulaire |
 | A04 | `VehicleStatus` (`DRAFT/REVIEW/PUBLISHED/RESERVED/SOLD/WITHDRAWN`) au lieu de `VehicleCommercialStatus` (`DRAFT/AVAILABLE/RESERVED/SOLD/UNAVAILABLE/ARCHIVED`) | Doc 12, doc 03 §6.1 | `schema.prisma:29` | Le référentiel distingue `commercial_status` de `is_published` ; le dépôt confond les deux — la fiche ne peut pas être « disponible mais non publiée » |
-| A05 | `VehicleLocation` sans `IN_TRANSIT` | Doc 12, doc 03 §6.1 | `schema.prisma:43` | Un véhicule en transit Chine→Sénégal n'est pas représentable, alors que c'est le cœur du parcours DIABACAR |
+| A05 | `VehicleLocation` sans `IN_TRANSIT` | Doc 12, doc 03 §6.1 | `schema.prisma:43` | Un véhicule en transit Chine→Sénégal n'est pas représentable, alors que c'est le cœur du parcours Diaba Auto |
 | A06 | `AssetVisibility` (`PUBLIC/PRIVATE`) au lieu de `DocumentVisibility` (`PUBLIC/PRIVATE/SHARE_ON_REQUEST`) | Doc 12, doc 03 §7 | `schema.prisma:74` | Le partage sur demande d'un document d'inspection n'est pas modélisable |
 | A07 | `LeadStatus` = `NEW/QUALIFIED/FOLLOW_UP/CONVERTED/LOST` | Doc 12 : `NEW/CONTACTED/QUALIFIED/NEGOTIATION/ORDER_CONFIRMED/LOST/COMPLETED` | `schema.prisma:48` | Aucun état de pipeline CRM canonique n'est représentable (perte de `NEGOTIATION`, `ORDER_CONFIRMED`) |
 | A08 | `OrderStatus` = `CREATED/CONFIRMED/PROCESSING/SHIPPING/DELIVERED/CANCELLED` | Doc 12 : `CONFIRMED/PROCESSING/IN_TRANSIT/ARRIVED/DELIVERED/CANCELLED` | `schema.prisma:65` | Suivi logistique import (`IN_TRANSIT`, `ARRIVED`) absent |
@@ -113,7 +113,7 @@ trentaine de tables à réaligner ensuite.
 
 Séquence proposée :
 
-1. Trancher A ou B (arbitrage DIABACAR — question produit, pas technique).
+1. Trancher A ou B (arbitrage Diaba Auto — question produit, pas technique).
 2. Si A : réécrire `schema.prisma` depuis le doc 12 (§annexe) sur le périmètre identité + audit, régénérer M01→M05, réappliquer `scripts/verify-migrations.mjs`, réexécuter la suite.
 3. Réarbitrer D01 (matrice rôle → permission) sur la liste du doc 07 §4, et C06 en conséquence.
 4. Trancher les questions désormais sourçables : D10 (tranché par doc 03 §9), D11, D12 (définitions de caractéristiques : doc 03 §5 et §8), D13 (`deleted_at` : doc 03 §6), D17 (**levée** : le modèle de données source existe — `docs/03_Modele_de_donnees_SOURCE.docx`).
@@ -121,7 +121,7 @@ Séquence proposée :
 
 ## 7. Réalisation (option A) — 2026-09-28
 
-Décision DIABACAR : **option A**, appliquée immédiatement, avant tout développement du lot catalogue.
+Décision Diaba Auto : **option A**, appliquée immédiatement, avant tout développement du lot catalogue.
 
 ### 7.1 Ce qui a été fait
 

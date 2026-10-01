@@ -6,7 +6,7 @@ import {
   profileDisplayName,
   profileFields,
   resellerStatusLabels,
-  resolveMyDiabacarMode,
+  resolveMyDiabaAutoMode,
   unknownResellerStatus,
 } from "@/components/profile/profile-view";
 import type { Actor } from "@/services/identity.service";
@@ -56,21 +56,21 @@ describe("reseller status labels", () => {
   });
 });
 
-describe("resolveMyDiabacarMode", () => {
+describe("resolveMyDiabaAutoMode", () => {
   it("keeps a visitor out of the private space", () => {
-    expect(resolveMyDiabacarMode(visitor)).toBe("visitor");
+    expect(resolveMyDiabaAutoMode(visitor)).toBe("visitor");
   });
 
   it("routes a suspended account to the read-only state", () => {
-    expect(resolveMyDiabacarMode(suspended)).toBe("suspended");
+    expect(resolveMyDiabaAutoMode(suspended)).toBe("suspended");
   });
 
   it("serves the dashboard to an active customer only", () => {
-    expect(resolveMyDiabacarMode(customer)).toBe("customer");
+    expect(resolveMyDiabaAutoMode(customer)).toBe("customer");
   });
 
   it("treats a staff session as a non-customer space", () => {
-    expect(resolveMyDiabacarMode(staff)).toBe("staff");
+    expect(resolveMyDiabaAutoMode(staff)).toBe("staff");
   });
 });
 

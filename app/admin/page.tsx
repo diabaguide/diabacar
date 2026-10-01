@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { logoutAction } from "@/app/my-diabacar/actions";
+import { logoutAction } from "@/app/my-diaba-auto/actions";
 import { createAdminMetadata } from "@/app/admin/guard";
 import { getCurrentActor } from "@/lib/auth/session";
 import { toErrorResponse } from "@/lib/errors";
@@ -11,7 +11,7 @@ import { requireStaff } from "@/services/access.service";
 import type { PermissionCode } from "@/services/permissions.service";
 
 /**
- * Back-office DIABACAR — accueil du lot L2.
+ * Back-office Diaba Auto — accueil du lot L2.
  *
  * L'accès exige `requireStaff(actor, "vehicle.view")` : session vérifiée, statut de compte actif,
  * puis permission. La permission d'entrée est la plus faible du portail opérationnel : elle est
@@ -26,7 +26,7 @@ import type { PermissionCode } from "@/services/permissions.service";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createAdminMetadata(
-  "Back-office DIABACAR",
+  "Back-office Diaba Auto",
   "Accès réservé au personnel habilité.",
 );
 
@@ -48,7 +48,7 @@ export default async function AdminPage() {
     <main className="mx-auto max-w-5xl px-4 py-10">
       <AdminHeader
         permissions={permissions}
-        title="Back-office DIABACAR"
+        title="Back-office Diaba Auto"
         subtitle="Accès réservé au personnel habilité."
         logout={authenticated ? <LogoutButton action={logoutAction} /> : undefined}
       />

@@ -1,5 +1,5 @@
 /**
- * Données de référence du seed DIABACAR.
+ * Données de référence du seed Diaba Auto.
  *
  * Sources : `docs/07_Roles_et_permissions.docx` (§« Permissions à implémenter » et §« Matrice de
  * décision ») et `docs/13_Plan_migrations_et_seeds.docx` (§« Seeds »), arbitrée par la décision D01 de

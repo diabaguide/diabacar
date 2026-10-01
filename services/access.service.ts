@@ -61,7 +61,7 @@ export function assertOwnership(actor: Actor, resource: { customerId: string }):
   }
 }
 
-/** Contrôle de propriété d'un profil client (My DIABACAR). */
+/** Contrôle de propriété d'un profil client (My Diaba Auto). */
 export function assertOwnProfile(actor: Actor, profileId: string): void {
   const authenticated = requireAuthenticated(actor);
   if (authenticated.kind === "staff") {

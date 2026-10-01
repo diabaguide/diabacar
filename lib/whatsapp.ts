@@ -66,7 +66,7 @@ export type VehicleWhatsAppMessageInput = {
  */
 export function buildVehicleWhatsAppMessage(input: VehicleWhatsAppMessageInput): string {
   const lines = [
-    "Bonjour DIABACAR, je souhaite des informations sur ce véhicule :",
+    "Bonjour Diaba Auto, je souhaite des informations sur ce véhicule :",
     `Véhicule : ${input.title}`,
     `Référence : ${input.reference}`,
   ];

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { ProfileActionState } from "@/app/my-diabacar/actions";
+import type { ProfileActionState } from "@/app/my-diaba-auto/actions";
 import type { CustomerProfileView } from "@/services/profile.service";
 
 const fieldClass =
