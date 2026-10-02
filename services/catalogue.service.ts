@@ -152,6 +152,8 @@ export type CatalogueRepository = {
   list(query: CatalogueListQuery): Promise<{ items: CatalogueVehicleRow[]; total: number }>;
   /** `null` si le véhicule n'existe pas ou n'est pas public (jamais d'erreur d'autorisation). */
   findBySlug(slug: string): Promise<CatalogueVehicleRow | null>;
+  /** Véhicules publics correspondant à des identifiants connus (lot 4, enrichissement des favoris). */
+  findByIds(ids: string[]): Promise<CatalogueVehicleRow[]>;
   listSimilar(input: {
     excludeId: string;
     brandId: string;
@@ -606,6 +608,25 @@ export async function listFeaturedVehicles(
 ): Promise<CatalogueCard[]> {
   const bounded = parseLimit(limit, DEFAULT_FEATURED_LIMIT, MAX_FEATURED_LIMIT, "Limite de nouveautés invalide.");
   const rows = await dependencies.repository.listFeatured(bounded);
+  const now = new Date();
+  const mediaConfig = defaultMediaConfig();
+
+  return rows.map((row) => toCatalogueCard(row, actor, { now, mediaConfig }));
+}
+
+/**
+ * Véhicules publics correspondant à des identifiants connus (lot 4, enrichissement des favoris dans
+ * My Diaba Auto). Un id invalide est ignoré plutôt que de faire échouer tout l'appel — contrairement
+ * aux filtres publics, ces identifiants ne viennent jamais directement d'une entrée utilisateur non
+ * contrôlée (ils proviennent de `favorite_vehicles`, déjà des UUID valides).
+ */
+export async function listVehiclesByIds(actor: Actor, ids: string[]): Promise<CatalogueCard[]> {
+  const validIds = [...new Set(ids.filter((id) => idField.safeParse(id).success))];
+  if (validIds.length === 0) {
+    return [];
+  }
+
+  const rows = await dependencies.repository.findByIds(validIds);
   const now = new Date();
   const mediaConfig = defaultMediaConfig();
 

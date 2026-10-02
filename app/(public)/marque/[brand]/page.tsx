@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCurrentActor } from "@/lib/auth/session";
 import { absoluteUrl, buildCatalogueMetadata } from "@/lib/seo";
 import { loadPublicData, parsePublicInput } from "@/components/public/public-data";
+import { loadFavoriteState } from "@/components/public/favorite-state";
 import {
   readCatalogueFilters,
   type SearchParamsRecord,
@@ -98,6 +99,7 @@ export default async function BrandPage({ params, searchParams }: PageProps) {
     const actor = await getCurrentActor();
     return listCatalogue(actor, filters);
   });
+  const favoriteState = await loadFavoriteState(await getCurrentActor());
 
   const formInitial: CatalogueFilters = { ...filters, brandId: undefined };
   const basePath = `/marque/${encodeURIComponent(brand)}`;
@@ -135,7 +137,7 @@ export default async function BrandPage({ params, searchParams }: PageProps) {
             <p className="mb-4 text-sm font-medium text-slate-600">
               {formatResultCount(catalogue.value.total)}
             </p>
-            <VehicleGrid vehicles={catalogue.value.items} />
+            <VehicleGrid vehicles={catalogue.value.items} favoriteState={favoriteState} />
             <CataloguePagination
               basePath={basePath}
               query={toCatalogueQueryString(formInitial)}

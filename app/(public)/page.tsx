@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentActor } from "@/lib/auth/session";
 import { absoluteUrl } from "@/lib/seo";
 import { loadPublicData } from "@/components/public/public-data";
+import { loadFavoriteState } from "@/components/public/favorite-state";
 import { QuickSearchForm } from "@/components/public/QuickSearchForm";
 import { VehicleGrid } from "@/components/public/VehicleGrid";
 import { fr } from "@/lib/i18n";
@@ -22,10 +23,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const featured = await loadPublicData(async () => {
-    const actor = await getCurrentActor();
-    return listFeaturedVehicles(actor, 6);
-  });
+  const actor = await getCurrentActor();
+  const [featured, favoriteState] = await Promise.all([
+    loadPublicData(() => listFeaturedVehicles(actor, 6)),
+    loadFavoriteState(actor),
+  ]);
 
   const featuredEmpty = featured.status !== "ok" || featured.value.length === 0;
 
@@ -65,7 +67,7 @@ export default async function HomePage() {
               {featured.status === "ok" ? fr.home.featuredEmpty : fr.home.featuredUnavailable}
             </p>
           ) : (
-            <VehicleGrid vehicles={featured.value} />
+            <VehicleGrid vehicles={featured.value} favoriteState={favoriteState} />
           )}
         </div>
       </section>

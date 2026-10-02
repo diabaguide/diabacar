@@ -12,3 +12,10 @@ export {
   formatResultCount,
   type Messages,
 } from "./fr";
+
+// Lot 4 — favoris, recherches enregistrées, demande personnalisée : espaces de noms distincts
+// (décision d'intégration, contrat lot 4 §3.1 — pas de fusion dans `fr` pour éviter tout conflit de
+// clé entre les trois sous-agents ; chaque module reste la source unique de ses propres libellés).
+export { favoritesFr, type FavoritesMessages } from "./favorites.fr";
+export { savedSearchesFr, type SavedSearchesMessages } from "./saved-searches.fr";
+export { customRequestMessages, type CustomRequestMessages } from "./custom-request.fr";

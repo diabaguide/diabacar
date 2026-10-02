@@ -33,6 +33,8 @@ export const serverEnvSchema = z.object({
   RATE_LIMIT_REGISTRATION_LIMIT: z.coerce.number().int().positive().optional(),
   RATE_LIMIT_RECOVERY_LIMIT: z.coerce.number().int().positive().optional(),
   RATE_LIMIT_SENSITIVE_LIMIT: z.coerce.number().int().positive().optional(),
+  // Ajout additif lot 4 (T36, contrat §2 Sous-agent C) : règle `customRequest` (`/commander`).
+  RATE_LIMIT_CUSTOM_REQUEST_LIMIT: z.coerce.number().int().positive().optional(),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
   STORAGE_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().max(3600).default(300),
 });
@@ -103,6 +105,11 @@ export function rateLimitRulesFromEnv(env: ServerEnv): RateLimitRules {
     sensitive: {
       limit: env.RATE_LIMIT_SENSITIVE_LIMIT ?? defaultRateLimitRules.sensitive.limit,
       windowMs: env.RATE_LIMIT_SENSITIVE_LIMIT ? windowMs : defaultRateLimitRules.sensitive.windowMs,
+    },
+    // Ajout additif lot 4 (T36, contrat §2 Sous-agent C) : règle `customRequest` (`/commander`).
+    customRequest: {
+      limit: env.RATE_LIMIT_CUSTOM_REQUEST_LIMIT ?? defaultRateLimitRules.customRequest.limit,
+      windowMs: env.RATE_LIMIT_CUSTOM_REQUEST_LIMIT ? windowMs : defaultRateLimitRules.customRequest.windowMs,
     },
   };
 }

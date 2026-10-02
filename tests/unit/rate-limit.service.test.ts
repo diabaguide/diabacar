@@ -47,6 +47,7 @@ describe("createRateLimiter", () => {
   it("ships documented, overridable rules for the sensitive surfaces", () => {
     expect(Object.keys(defaultRateLimitRules).sort()).toEqual([
       "authentication",
+      "customRequest",
       "recovery",
       "registration",
       "sensitive",

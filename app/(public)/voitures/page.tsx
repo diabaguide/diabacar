@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getCurrentActor } from "@/lib/auth/session";
 import { buildCatalogueMetadata } from "@/lib/seo";
 import { loadPublicData, parsePublicInput } from "@/components/public/public-data";
+import { loadFavoriteState } from "@/components/public/favorite-state";
 import {
   readCatalogueFilters,
   type SearchParamsRecord,
@@ -12,6 +13,7 @@ import { CatalogueFilterForm } from "@/components/public/CatalogueFilterForm";
 import { CataloguePagination } from "@/components/public/CataloguePagination";
 import { CatalogueLink, EmptyState } from "@/components/public/EmptyState";
 import { DataUnavailable } from "@/components/public/DataUnavailable";
+import { SaveSearchButton } from "@/components/public/SaveSearchButton";
 import { VehicleGrid } from "@/components/public/VehicleGrid";
 import { formatResultCount, fr } from "@/lib/i18n";
 import {
@@ -87,18 +89,22 @@ export default async function CataloguePage({ searchParams }: PageProps) {
   const filters: CatalogueFilters = parsed.value;
   const facets = await loadFacets();
 
-  const catalogue = await loadPublicData(async () => {
-    const actor = await getCurrentActor();
-    return listCatalogue(actor, filters);
-  });
+  const actor = await getCurrentActor();
+  const [catalogue, favoriteState] = await Promise.all([
+    loadPublicData(() => listCatalogue(actor, filters)),
+    loadFavoriteState(actor),
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <CatalogueHeader />
 
       {facets.status === "ok" ? (
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-4">
           <CatalogueFilterForm facets={facets.value} initial={filters} />
+          <div className="flex justify-end">
+            <SaveSearchButton filters={filters} isAuthenticated={favoriteState.isAuthenticated} />
+          </div>
         </div>
       ) : null}
 
@@ -118,7 +124,7 @@ export default async function CataloguePage({ searchParams }: PageProps) {
             <p className="mb-4 text-sm font-medium text-slate-600">
               {formatResultCount(catalogue.value.total)}
             </p>
-            <VehicleGrid vehicles={catalogue.value.items} />
+            <VehicleGrid vehicles={catalogue.value.items} favoriteState={favoriteState} />
             <CataloguePagination
               basePath="/voitures"
               query={toCatalogueQueryString(filters)}

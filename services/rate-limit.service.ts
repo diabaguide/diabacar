@@ -26,6 +26,9 @@ export const defaultRateLimitRules = {
   registration: { limit: 5, windowMs: 60 * 60_000 },
   recovery: { limit: 5, windowMs: 60 * 60_000 },
   sensitive: { limit: 30, windowMs: 60_000 },
+  // Ajout additif lot 4 (T36, contrat §2 Sous-agent C) : formulaire public sans authentification
+  // (`/commander`), seuil provisoire identique à `registration`/`recovery` (même mécanisme, D07).
+  customRequest: { limit: 5, windowMs: 60 * 60_000 },
 } satisfies RateLimitRules;
 
 export type RateLimiter = {

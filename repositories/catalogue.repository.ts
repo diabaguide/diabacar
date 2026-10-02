@@ -324,6 +324,25 @@ export function createCatalogueRepository(
     return row ? toCatalogueVehicleRow(row) : null;
   }
 
+  /**
+   * Véhicules publics correspondant à des identifiants connus (lot 4, enrichissement des favoris).
+   * Même règle que `findBySlug` : publié ET non archivé, `SOLD` INCLUS (un favori sur un véhicule
+   * vendu reste affichable, exactement comme sa fiche — contrat §3.2). Un id inconnu, non publié ou
+   * archivé est simplement absent du résultat, jamais une erreur.
+   */
+  async function findByIds(ids: string[]): Promise<CatalogueVehicleRow[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const rows = await client.vehicle.findMany({
+      where: { id: { in: ids }, isPublished: true, archivedAt: null },
+      select: catalogueVehicleSelect,
+    });
+
+    return rows.map(toCatalogueVehicleRow);
+  }
+
   async function listSimilar(input: {
     excludeId: string;
     brandId: string;
@@ -422,6 +441,7 @@ export function createCatalogueRepository(
   return {
     list,
     findBySlug,
+    findByIds,
     listSimilar,
     listFeatured,
     listFacets,

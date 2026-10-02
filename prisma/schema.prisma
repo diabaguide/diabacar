@@ -610,10 +610,15 @@ model Lead {
 
 // Modèle provisoire : le corpus décrit `custom_vehicle_requests` (doc 03 §11) rattaché au
 // prospect, avec marque/modèle demandés — remodelage prévu au lot CRM.
+// `contactName`/`contactPhone` ajoutés au lot 4 (décision T33) : dev.md §4 exige qu'une demande
+// personnalisée « conserve les coordonnées nécessaires même sans compte » (parcours visiteur), ce
+// que le modèle initial ne permettait pas (aucune colonne de contact hors `customerId`).
 model CustomRequest {
   id           String           @id @default(uuid()) @db.Uuid
   customerId   String?          @map("customer_id") @db.Uuid
   customer     CustomerProfile? @relation(fields: [customerId], references: [id])
+  contactName  String?          @map("contact_name")
+  contactPhone String?          @map("contact_phone")
   criteriaJson Json             @map("criteria_json")
   budgetMin    Decimal?         @map("budget_min") @db.Decimal(14, 2)
   budgetMax    Decimal?         @map("budget_max") @db.Decimal(14, 2)

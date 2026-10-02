@@ -46,6 +46,8 @@ CREATE TABLE "leads" (
 CREATE TABLE "custom_requests" (
     "id" UUID NOT NULL,
     "customer_id" UUID,
+    "contact_name" TEXT,
+    "contact_phone" TEXT,
     "criteria_json" JSONB NOT NULL,
     "budget_min" DECIMAL(14,2),
     "budget_max" DECIMAL(14,2),

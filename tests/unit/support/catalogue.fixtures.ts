@@ -185,6 +185,11 @@ export function createFakeCatalogueRepository(
       return rows.find((row) => row.slug === slug) ?? null;
     },
 
+    /** Même règle que la couche Prisma (`findByIds`, lot 4) : publié, non archivé, `SOLD` inclus. */
+    async findByIds(ids) {
+      return rows.filter((row) => ids.includes(row.id));
+    },
+
     async listSimilar(options) {
       return rows
         .filter(

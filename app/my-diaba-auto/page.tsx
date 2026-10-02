@@ -9,9 +9,18 @@ import {
   SuspendedAccountNotice,
 } from "@/components/profile/ProfileNotices";
 import { ResellerStatusBadge } from "@/components/profile/ResellerStatusBadge";
+import { FavoritesList, type FavoritesListItem } from "@/components/profile/FavoritesList";
+import { SavedSearchesList } from "@/components/profile/SavedSearchesList";
+import { CustomRequestsList } from "@/components/profile/CustomRequestsList";
+import { FavoritesMergeOnLogin } from "@/components/profile/FavoritesMergeOnLogin";
 import { getCurrentActor } from "@/lib/auth/session";
 import { createCustomerRepository } from "@/repositories/customer.repository";
+import { createFavoriteRepository } from "@/repositories/favorite.repository";
 import { readOwnCustomerProfile, type CustomerProfileView } from "@/services/profile.service";
+import { listOwnFavorites } from "@/services/favorite.service";
+import { listOwnSavedSearches } from "@/services/saved-search.service";
+import { listOwnCustomRequests } from "@/services/custom-request.service";
+import { listVehiclesByIds } from "@/services/catalogue.service";
 import { logoutAction, updateProfileAction } from "./actions";
 
 /**
@@ -68,6 +77,10 @@ async function CustomerDashboard() {
 
   return (
     <>
+      {/* Fusionne une seule fois les favoris locaux (visiteur) dans le compte après connexion
+          (T34) : effet client, idempotent, ne bloque jamais le rendu du tableau de bord. */}
+      <FavoritesMergeOnLogin />
+
       <ProfileSummary profile={profile} />
       <section aria-labelledby="profil-statut" className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 id="profil-statut" className="text-lg font-semibold text-[#011D4F]">
@@ -81,6 +94,71 @@ async function CustomerDashboard() {
         </div>
       </section>
       <ProfileForm profile={profile} action={updateProfileAction} />
+
+      <FavoritesSection />
+      <SavedSearchesSection />
+      <CustomRequestsSection />
     </>
   );
+}
+
+/**
+ * Favoris du client : le repository ne porte que `favorite_vehicles` (contrat §Sous-agent A), cette
+ * section assemble donc la liste avec une lecture catalogue (`listVehiclesByIds`) — intégration
+ * prévue au contrat §3.4. Une erreur de lecture n'empêche jamais l'affichage du reste du tableau de
+ * bord : elle retombe sur une liste vide plutôt que de faire échouer toute la page.
+ */
+async function FavoritesSection() {
+  const actor = await getCurrentActor();
+
+  let items: FavoritesListItem[] = [];
+  try {
+    const favorites = await listOwnFavorites(createFavoriteRepository(), actor);
+    const vehicles = await listVehiclesByIds(actor, favorites.map((favorite) => favorite.vehicleId));
+    const vehicleById = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
+
+    items = favorites.map((favorite) => {
+      const vehicle = vehicleById.get(favorite.vehicleId);
+      return {
+        vehicleId: favorite.vehicleId,
+        addedAt: favorite.addedAt,
+        vehicle: vehicle
+          ? {
+              slug: vehicle.slug,
+              title: vehicle.title,
+              brandName: vehicle.brandName,
+              modelName: vehicle.modelName,
+              year: vehicle.year,
+              imageUrl: vehicle.primaryImage?.url ?? null,
+            }
+          : null,
+      };
+    });
+  } catch {
+    items = [];
+  }
+
+  return <FavoritesList items={items} />;
+}
+
+async function SavedSearchesSection() {
+  const actor = await getCurrentActor();
+
+  try {
+    const searches = await listOwnSavedSearches(actor);
+    return <SavedSearchesList searches={searches} />;
+  } catch {
+    return <SavedSearchesList searches={[]} />;
+  }
+}
+
+async function CustomRequestsSection() {
+  const actor = await getCurrentActor();
+
+  try {
+    const requests = await listOwnCustomRequests(actor);
+    return <CustomRequestsList requests={requests} />;
+  } catch {
+    return <CustomRequestsList requests={[]} />;
+  }
 }

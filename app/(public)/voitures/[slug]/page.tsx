@@ -5,7 +5,9 @@ import { cache } from "react";
 import { getCurrentActor } from "@/lib/auth/session";
 import { absoluteUrl, buildVehicleJsonLd, buildVehicleMetadata, jsonLdScriptProps } from "@/lib/seo";
 import { loadPublicData } from "@/components/public/public-data";
+import { loadFavoriteState } from "@/components/public/favorite-state";
 import { DataUnavailable } from "@/components/public/DataUnavailable";
+import { FavoriteButton } from "@/components/public/FavoriteButton";
 import { PriceBlock } from "@/components/public/PriceBlock";
 import { ShareButton } from "@/components/public/ShareButton";
 import { StatusBadges, detailBadges } from "@/components/public/StatusBadges";
@@ -117,10 +119,11 @@ export default async function VehiclePage({ params }: PageProps) {
   });
 
   const similarInput = { id: vehicle.id, brandId: vehicle.brandId, modelId: vehicle.modelId };
-  const similar = await loadPublicData(async () => {
-    const actor = await getCurrentActor();
-    return listSimilarVehicles(actor, similarInput, 4);
-  });
+  const actor = await getCurrentActor();
+  const [similar, favoriteState] = await Promise.all([
+    loadPublicData(() => listSimilarVehicles(actor, similarInput, 4)),
+    loadFavoriteState(actor),
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -165,7 +168,14 @@ export default async function VehiclePage({ params }: PageProps) {
               slug={vehicle.slug}
               priceLabel={priceLabel}
             />
-            <ShareButton url={canonical} title={vehicle.title} />
+            <div className="flex flex-wrap gap-3">
+              <FavoriteButton
+                vehicleId={vehicle.id}
+                isAuthenticated={favoriteState.isAuthenticated}
+                initialIsFavorite={favoriteState.favoriteVehicleIds.has(vehicle.id)}
+              />
+              <ShareButton url={canonical} title={vehicle.title} />
+            </div>
           </div>
         </div>
       </div>
@@ -228,7 +238,7 @@ export default async function VehiclePage({ params }: PageProps) {
         <section className="mt-12">
           <h2 className="text-xl font-semibold text-[#011D4F]">{fr.vehicle.similarTitle}</h2>
           <div className="mt-6">
-            <VehicleGrid vehicles={similar.value} />
+            <VehicleGrid vehicles={similar.value} favoriteState={favoriteState} />
           </div>
         </section>
       ) : null}
