@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <Link href="/" className="flex items-center gap-3" aria-label="Accueil Diaba Auto">
-              <Image src="/brand/diaba-auto-logo.jpg" alt="Diaba Auto" width={154} height={48} priority className="h-12 w-auto object-contain" />
+              <Image src="/brand/diaba-auto-logo.png" alt="Diaba Auto" width={144} height={48} priority className="h-12 w-auto object-contain" />
             </Link>
             <nav className="hidden items-center gap-5 text-sm font-medium text-[#011D4F] md:flex" aria-label="Navigation principale">
               {navItems.map(([label, href]) => <Link key={href} href={href} className="hover:text-[#0063DF]">{label}</Link>)}
